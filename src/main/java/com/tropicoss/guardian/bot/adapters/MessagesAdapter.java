@@ -1,4 +1,4 @@
-package com.tropicoss.guardian.bot;
+package com.tropicoss.guardian.bot.adapters;
 
 import static com.tropicoss.guardian.Mod.LOGGER;
 
@@ -10,6 +10,5 @@ public class MessagesAdapter extends ListenerAdapter {
   @Override
   public void onMessageReceived(MessageReceivedEvent event) {
     DiscordChatCallback.EVENT.invoker().dispatch(event.getMessage());
-    LOGGER.info(event.getMessage().getContentDisplay());
   }
 }

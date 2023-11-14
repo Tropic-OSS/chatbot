@@ -9,6 +9,7 @@ import com.tropicoss.guardian.minecraft.Commands;
 import java.io.File;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
 import org.slf4j.Logger;
@@ -21,6 +22,7 @@ public class Mod implements DedicatedServerModInitializer {
   public static Config CONFIG;
   public static MinecraftServer SERVER;
   public static Bot BOT;
+  public static int playerCount = -1;
 
   @Override
   public void onInitializeServer() {
@@ -33,20 +35,31 @@ public class Mod implements DedicatedServerModInitializer {
 
       BOT = Bot.getInstance();
 
+      ServerLifecycleEvents.SERVER_STARTED.register(
+          server -> {
+            SERVER = server;
+            BOT.onStartUp();
+          });
+
+      ServerLifecycleEvents.SERVER_STOPPING.register(
+          server -> {
+            BOT.onShutDown();
+          });
+
+      ServerTickEvents.END_WORLD_TICK.register(world -> BOT.onServerTick());
+
+      ChatMessageCallback.EVENT.register(BOT::onGameChat);
+
+      ServerMessageCallback.EVENT.register(BOT::onServerMessage);
+
+      DiscordChatCallback.EVENT.register(BOT::onDiscordChat);
+
+      LOGGER.info("╔═══════════════════════════════════════╗");
+      LOGGER.info("║         Guardian Has Started          ║");
+      LOGGER.info("╚═══════════════════════════════════════╝");
+
     } catch (Exception e) {
       LOGGER.error(e.getMessage());
     }
-
-    ServerLifecycleEvents.SERVER_STARTED.register(server -> SERVER = server);
-
-    ChatMessageCallback.EVENT.register(BOT::onGameChat);
-
-    ServerMessageCallback.EVENT.register(BOT::onServerMessage);
-    // Discord chat events
-    DiscordChatCallback.EVENT.register(BOT::onDiscordChat);
-
-    LOGGER.info("╔═══════════════════════════════════════╗");
-    LOGGER.info("║         Guardian Has Started          ║");
-    LOGGER.info("╚═══════════════════════════════════════╝");
   }
 }
