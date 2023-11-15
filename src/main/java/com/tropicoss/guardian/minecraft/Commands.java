@@ -1,7 +1,5 @@
 package com.tropicoss.guardian.minecraft;
 
-import static com.tropicoss.guardian.Mod.BOT;
-import static com.tropicoss.guardian.Mod.CONFIG;
 import static net.minecraft.server.command.CommandManager.literal;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -17,7 +15,6 @@ public class Commands {
                         context -> {
                           context.getSource().sendFeedback(() -> Text.literal("Hello"), false);
                           return 1;
-                        })
-                    ));
+                        })));
   }
 }

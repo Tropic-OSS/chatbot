@@ -6,6 +6,7 @@ version = project.mod_version
 group = project.maven_group
 
 repositories {
+    mavenCentral()
 }
 
 dependencies {
@@ -16,6 +17,9 @@ dependencies {
 
     // Fabric API. This is technically optional, but you probably want it anyway.
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    // Java-WebSocket (Websocket API)
+    include( implementation 'org.java-websocket:Java-WebSocket:1.5.2')
 
     // JDA (Discord API)
     include (implementation("net.dv8tion:JDA:5.0.0-beta.17"))

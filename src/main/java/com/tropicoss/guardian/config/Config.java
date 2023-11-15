@@ -1,71 +1,60 @@
 package com.tropicoss.guardian.config;
 
-import static com.tropicoss.guardian.Mod.LOGGER;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import java.io.*;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import net.fabricmc.loader.api.FabricLoader;
 
 public class Config {
-  public String prefix = "!";
-  public String token = "";
-  public String chatChannel = "";
-  private static Config instance;
+  private static final String CONFIG_FILE_NAME = "guardian.json";
+  public static BotConfig Bot;
+  public static WebSocketConfig WebSocket;
+  public static GenericConfig Generic;
 
-  public static Config getInstance() {
-    return instance;
-  }
-
-  public static void load(File file) {
-    if (!file.exists()) {
-      createDefaultConfig(file);
-    } else {
-      instance = fromFile(file);
-    }
-  }
-
-  private static void createDefaultConfig(File configFile) {
-    try {
-      instance = new Config();
-      saveToFile(configFile);
-      LOGGER.info("Default config file created: " + configFile.getAbsolutePath());
-    } catch (IOException e) {
-      handleConfigError("Error creating default config file: " + e.getMessage());
-    }
-  }
-
-  private static void saveToFile(File configFile) throws IOException {
-    try (FileWriter writer = new FileWriter(configFile)) {
-      writer.write(instance.toString());
-      LOGGER.info("Default config saved to file: " + configFile.getAbsolutePath());
-    }
-  }
-
-  private static Config fromFile(File configFile) {
-    try (BufferedReader reader =
-        new BufferedReader(new InputStreamReader(new FileInputStream(configFile)))) {
-      Gson gson = new GsonBuilder().setPrettyPrinting().create();
-      return gson.fromJson(reader, Config.class);
-    } catch (FileNotFoundException e) {
-      handleConfigError("Config file not found or empty. Stopping the server...");
-    } catch (IOException e) {
-      handleConfigError("Error reading config file: " + e.getMessage());
-    }
-    return null;
-  }
-
-  private static void handleConfigError(String errorMessage) {
-    LOGGER.error("╔═══════════════════════════════════════╗");
-    LOGGER.error("║     ERROR: Config File Issue          ║");
-    LOGGER.error("║                                       ║");
-    LOGGER.error("║ " + errorMessage);
-    LOGGER.error("╚═══════════════════════════════════════╝");
-    System.exit(0);
-  }
-
-  @Override
-  public String toString() {
+  static {
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    return gson.toJson(this);
+
+    ConfigData configData = loadConfig();
+
+    Bot = configData.Bot;
+    WebSocket = configData.WebSocket;
+    Generic = configData.Generic;
+
+    saveConfig(configData, gson);
+  }
+
+  private static ConfigData loadConfig() {
+    Path configFilePath = FabricLoader.getInstance().getConfigDir().resolve(CONFIG_FILE_NAME);
+
+    if (Files.isRegularFile(configFilePath)) {
+      try {
+        String json = Files.readString(configFilePath);
+        return new Gson().fromJson(json, ConfigData.class);
+      } catch (IOException e) {
+        throw new RuntimeException("Error loading configuration file", e);
+      }
+    }
+
+    return new ConfigData();
+  }
+
+  private static void saveConfig(ConfigData configData, Gson gson) {
+    Path configFilePath = FabricLoader.getInstance().getConfigDir().resolve(CONFIG_FILE_NAME);
+    try {
+      String json = gson.toJson(configData);
+      Files.writeString(
+          configFilePath, json, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+    } catch (IOException e) {
+      throw new RuntimeException("Error saving configuration file", e);
+    }
+  }
+
+  private static class ConfigData {
+    BotConfig Bot = new BotConfig();
+    WebSocketConfig WebSocket = new WebSocketConfig();
+    GenericConfig Generic = new GenericConfig();
   }
 }

@@ -1,14 +1,16 @@
 package com.tropicoss.guardian.bot;
 
-import static com.tropicoss.guardian.Mod.*;
-import static com.tropicoss.guardian.Mod.SERVER;
+import static com.tropicoss.guardian.Guardian.*;
+import static com.tropicoss.guardian.Guardian.SERVER;
 
 import com.tropicoss.guardian.bot.adapters.MessagesAdapter;
+import com.tropicoss.guardian.config.Config;
+import java.time.Instant;
+import java.util.Objects;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.entities.EmbedType;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -19,10 +21,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
-
-import java.awt.*;
-import java.time.Instant;
-import java.util.Objects;
 
 public class Bot {
   private static final Bot instance;
@@ -41,7 +39,7 @@ public class Bot {
   private Bot() throws InterruptedException {
     try {
       BOT =
-          JDABuilder.createDefault(CONFIG.token)
+          JDABuilder.createDefault(Config.Bot.token)
               .setChunkingFilter(ChunkingFilter.ALL)
               .setMemberCachePolicy(MemberCachePolicy.ALL)
               .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.MESSAGE_CONTENT)
@@ -49,9 +47,19 @@ public class Bot {
               .build()
               .awaitReady();
 
-      CHANNEL = BOT.getTextChannelById(CONFIG.chatChannel);
+      CHANNEL = BOT.getTextChannelById(Config.Bot.channel);
     } catch (Exception e) {
-      LOGGER.error("Error starting bot: " + e.getMessage());
+      switch (e.getClass().getSimpleName()) {
+        case "InvalidTokenException":
+          LOGGER.error("Invalid bot token. Please check your config file.");
+          break;
+        case "IllegalArgumentException":
+          LOGGER.error("Invalid bot channel. Please check your config file.");
+          break;
+        default:
+          LOGGER.error("Error starting bot: " + e.getMessage());
+          break;
+      }
       throw e;
     }
   }
@@ -61,7 +69,8 @@ public class Bot {
   }
 
   public void onStartUp() {
-    EmbedBuilder embedBuilder = new EmbedBuilder()
+    EmbedBuilder embedBuilder =
+        new EmbedBuilder()
             .setAuthor(SERVER.getName())
             .setDescription("Server has started!")
             .setFooter(SERVER.getName())
@@ -71,7 +80,8 @@ public class Bot {
   }
 
   public void onShutDown() {
-    EmbedBuilder embedBuilder = new EmbedBuilder()
+    EmbedBuilder embedBuilder =
+        new EmbedBuilder()
             .setAuthor(SERVER.getName())
             .setDescription("Server has shut down!")
             .setFooter(SERVER.getName())
@@ -97,12 +107,19 @@ public class Bot {
     }
   }
 
-  public void onGameChat(MinecraftServer minecraftServer, Text text, ServerPlayerEntity serverPlayerEntity) {
-      sendMessage(getEmbedBuilder(text.getString(), serverPlayerEntity, SERVER.getName()).build());
+  public void onGameChat(
+      MinecraftServer minecraftServer, Text text, ServerPlayerEntity serverPlayerEntity) {
+    sendMessage(getEmbedBuilder(text.getString(), serverPlayerEntity, Config.Generic.name).build());
   }
 
   public void onServerMessage(MinecraftServer minecraftServer, Text text) {
-    sendMessage(getEmbedBuilder(text.getString(),null, SERVER.getName()).build());
+    sendMessage(getEmbedBuilder(text.getString(), null, Config.Generic.name).build());
+  }
+
+  public void onWebSocketMessage(String message) {
+    LOGGER.info(String.format("[%s] %s: %s", Config.Generic.name, "User", message));
+    if (SOCKET_SERVER != null) SOCKET_SERVER.broadcast(message);
+    sendMessage(getEmbedBuilder(message, null, Config.Generic.name).build());
   }
 
   public void onDiscordChat(Message message) {
@@ -110,34 +127,45 @@ public class Bot {
 
     if (message.getChannel() != CHANNEL) return;
 
-    if(!message.getEmbeds().isEmpty()) return;
+    if (!message.getEmbeds().isEmpty()) return;
 
-    LOGGER.info(String.format("[Discord] %s: %s", message.getAuthor().getName(), message.getContentRaw()));
+    LOGGER.info(
+        String.format("[Discord] %s: %s", message.getAuthor().getName(), message.getContentRaw()));
 
-    Text text = Text.of(String.format("§9[Discord] §b%s: §f%s",  Objects.requireNonNull(message.getGuild().getMember(message.getAuthor())).getEffectiveName(), message.getContentRaw()));
+    Text text =
+        Text.of(
+            String.format(
+                "§9[Discord] §b%s: §f%s",
+                Objects.requireNonNull(message.getGuild().getMember(message.getAuthor()))
+                    .getEffectiveName(),
+                message.getContentRaw()));
 
     for (ServerPlayerEntity player : SERVER.getPlayerManager().getPlayerList()) {
       player.sendMessage(text, false);
     }
   }
 
-  public EmbedBuilder getEmbedBuilder(String message, @Nullable ServerPlayerEntity player, String ServerName) {
+  public EmbedBuilder getEmbedBuilder(
+      String message, @Nullable ServerPlayerEntity player, String ServerName) {
 
     if (player == null) {
       return new EmbedBuilder()
-              .setAuthor(ServerName)
-              .setDescription(message)
-              .setFooter(ServerName)
-              .setTimestamp(Instant.now())
-              .setColor(4321431);
+          .setAuthor(ServerName)
+          .setDescription(message)
+          .setFooter(ServerName)
+          .setTimestamp(Instant.now())
+          .setColor(4321431);
     }
 
     return new EmbedBuilder()
-            .setAuthor(player.getName().getString(), String.format("https://namemc.com/profile/%s", player.getName().getString()), String.format("https://minotar.net/avatar/%s/100.png", player.getUuidAsString()))
-            .setDescription(message)
-            .setFooter(ServerName)
-            .setTimestamp(Instant.now())
-            .setColor(39129);
+        .setAuthor(
+            player.getName().getString(),
+            String.format("https://namemc.com/profile/%s", player.getName().getString()),
+            String.format("https://minotar.net/avatar/%s/100.png", player.getUuidAsString()))
+        .setDescription(message)
+        .setFooter(ServerName)
+        .setTimestamp(Instant.now())
+        .setColor(39129);
   }
 
   public void sendMessage(MessageEmbed embed) {
