@@ -1,6 +1,7 @@
 package com.tropicoss.guardian.socket;
 
 import com.tropicoss.guardian.config.Config;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import org.java_websocket.client.WebSocketClient;
@@ -9,23 +10,19 @@ import org.java_websocket.handshake.ServerHandshake;
 
 import java.net.URI;
 
-import static com.tropicoss.guardian.Guardian.LOGGER;
-import static com.tropicoss.guardian.Guardian.SERVER;
+import static com.tropicoss.guardian.Guardian.*;
 
 public class Client extends WebSocketClient {
   public Client(URI serverUri) {
     super(serverUri);
   }
 
-  public static void main(String[] args) {
-    Client client = new Client(URI.create("ws://localhost:9090"));
-    client.connect();
-
-    client.send("Hello");
-  }
-
   @Override
-  public void onOpen(ServerHandshake handshake) {}
+  public void onOpen(ServerHandshake handshake) {
+    LOGGER.info("╔═══════════════════════════════════════╗");
+    LOGGER.info("║         Connected To Server           ║");
+    LOGGER.info("╚═══════════════════════════════════════╝");
+  }
 
   @Override
   public void onMessage(String message) {
@@ -45,8 +42,11 @@ public class Client extends WebSocketClient {
   @Override
   public void onError(Exception ex) {}
 
-    public void onGameChat(
-        MinecraftServer minecraftServer, Text text, ServerPlayerEntity serverPlayerEntity) {
-      sendMessage(getEmbedBuilder(text.getString(), serverPlayerEntity, Config.Generic.name).build());
-    }
+  public void onGameChat(MinecraftServer minecraftServer, Text text, ServerPlayerEntity serverPlayerEntity) {
+    this.send(text.getString());
+  }
+
+  public void onServerMessage(MinecraftServer minecraftServer, Text text) {
+    this.send(text.getString());
+  }
 }

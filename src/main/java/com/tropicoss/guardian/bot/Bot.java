@@ -119,6 +119,7 @@ public class Bot {
   public void onWebSocketMessage(String message) {
     LOGGER.info(String.format("[%s] %s: %s", Config.Generic.name, "User", message));
     if (SOCKET_SERVER != null) SOCKET_SERVER.broadcast(message);
+
     sendMessage(getEmbedBuilder(message, null, Config.Generic.name).build());
   }
 

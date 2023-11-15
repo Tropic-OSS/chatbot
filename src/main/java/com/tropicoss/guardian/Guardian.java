@@ -67,9 +67,12 @@ public class Guardian implements DedicatedServerModInitializer {
           Client client = new Client(URI.create(uri));
           client.connect();
           LOGGER.info("Running in client mode.");
-          WebSocketMessageCallback.EVENT.register(
-                  client::onMessage
-          );
+          ServerLifecycleEvents.SERVER_STARTED.register(
+                  server -> SERVER = server);
+
+          ChatMessageCallback.EVENT.register(client::onGameChat);
+
+          ServerMessageCallback.EVENT.register(client::onServerMessage);
       }
 
       LOGGER.info("╔═══════════════════════════════════════╗");

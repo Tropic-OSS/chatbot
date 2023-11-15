@@ -16,11 +16,6 @@ public class Server extends WebSocketServer {
     super(address);
   }
 
-  public static void main(String[] args) {
-    Server server = new Server(new InetSocketAddress(9090));
-    server.start();
-  }
-
   @Override
   public void onOpen(WebSocket conn, ClientHandshake handshake) {
     System.out.println(
