@@ -23,7 +23,6 @@ public class Guardian implements DedicatedServerModInitializer {
 
   public static final Logger LOGGER = LoggerFactory.getLogger("Guardian");
   public static MinecraftServer SERVER;
-  public static Client CLIENT;
   public static Server SOCKET_SERVER;
   public static Bot BOT;
   public static int playerCount = -1;
