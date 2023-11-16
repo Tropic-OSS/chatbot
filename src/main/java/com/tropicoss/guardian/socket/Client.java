@@ -5,12 +5,11 @@ import static com.tropicoss.guardian.Guardian.SOCKET_CLIENT;
 
 import com.tropicoss.guardian.AbstractMessage;
 import com.tropicoss.guardian.MessageType;
+import com.tropicoss.guardian.PlayerInfoFetcher;
 import com.tropicoss.guardian.config.Config;
 import com.tropicoss.guardian.serialization.MessageSerializer;
 import java.io.IOException;
 import java.net.URI;
-import java.util.UUID;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
@@ -81,20 +80,23 @@ public class Client extends WebSocketClient {
   }
 
   private void handleClientMessage(AbstractMessage.ClientMessage msg) {
-    ServerPlayerEntity playerEntity =
-        SERVER.getPlayerManager().getPlayer(UUID.fromString(msg.getPlayerUUID()));
 
-    assert playerEntity != null;
+    PlayerInfoFetcher.Profile profile = PlayerInfoFetcher.getProfile(msg.getPlayerUUID());
+
+    if (profile == null) {
+      LOGGER.error("Error fetching player info for UUID: " + msg.getPlayerUUID());
+      return;
+    }
 
     LOGGER.info(
         String.format(
-            "[%s] %s: %s", msg.getOrigin(), playerEntity.getName().getString(), msg.getMessage()));
+            "[%s] %s: %s", msg.getOrigin(), profile.data.player.username, msg.getMessage()));
 
     Text text =
         Text.of(
             String.format(
                 "§9[%s] §b%s: §f%s",
-                msg.getOrigin(), playerEntity.getName().getString(), msg.getMessage()));
+                msg.getOrigin(),  profile.data.player.username, msg.getMessage()));
 
     SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(text, false));
   }
