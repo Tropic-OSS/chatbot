@@ -21,9 +21,13 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Bot {
   private static final Bot instance;
+
+  private static final Logger LOGGER = LoggerFactory.getLogger("Guardian Bot");
 
   static {
     try {
@@ -69,113 +73,63 @@ public class Bot {
   }
 
   public void onStartUp() {
-    EmbedBuilder embedBuilder =
-        new EmbedBuilder()
-            .setAuthor(SERVER.getName())
+    CHANNEL.sendMessageEmbeds(new EmbedBuilder()
+            .setAuthor(Config.Generic.name)
             .setDescription("Server has started!")
-            .setFooter(SERVER.getName())
+            .setFooter(Config.Generic.name)
             .setTimestamp(Instant.now())
-            .setColor(35406);
-    sendMessage(embedBuilder.build());
+            .setColor(35406).build())
+            .queue();
   }
 
-  public void onShutDown() {
-    EmbedBuilder embedBuilder =
-        new EmbedBuilder()
-            .setAuthor(SERVER.getName())
+  public void onShutDown()   {
+    CHANNEL.sendMessageEmbeds(new EmbedBuilder()
+            .setAuthor(Config.Generic.name)
             .setDescription("Server has shut down!")
-            .setFooter(SERVER.getName())
+            .setFooter(Config.Generic.name)
             .setTimestamp(Instant.now())
-            .setColor(16065893);
-    sendMessage(embedBuilder.build());
+            .setColor(16065893).build())
+            .queue();
 
-    BOT.shutdown();
+    BOT.shutdownNow();
   }
 
-  public void onServerTick() {
-    // Update player count every 5 seconds (100 ticks)
-    if (SERVER.getTicks() % 100 == 0) {
-      if (playerCount != SERVER.getCurrentPlayerCount()) {
-        playerCount = SERVER.getCurrentPlayerCount();
-        BOT.getPresence()
-            .setActivity(
-                Activity.customStatus(
-                    String.format(
-                        "%d/%d players",
-                        SERVER.getCurrentPlayerCount(), SERVER.getMaxPlayerCount())));
-      }
-    }
-  }
-
-  public void onGameChat(
-      MinecraftServer minecraftServer, Text text, ServerPlayerEntity serverPlayerEntity) {
-    sendMessage(getEmbedBuilder(text.getString(), serverPlayerEntity, Config.Generic.name).build());
-  }
-
-  public void onServerMessage(MinecraftServer minecraftServer, Text text) {
-    sendMessage(getEmbedBuilder(text.getString(), null, Config.Generic.name).build());
-  }
-
-  public void onWebSocketMessage(String message) {
-    LOGGER.info(String.format("[%s] %s: %s", Config.Generic.name, "User", message));
-    if (SOCKET_SERVER != null) SOCKET_SERVER.broadcast(message);
-
-    sendMessage(getEmbedBuilder(message, null, Config.Generic.name).build());
-  }
-
-  public void onDiscordChat(Message message) {
-    if (message.getAuthor().isBot()) return;
-
-    if (message.getChannel() != CHANNEL) return;
-
-    if (!message.getEmbeds().isEmpty()) return;
-
-    LOGGER.info(
-        String.format("[Discord] %s: %s", message.getAuthor().getName(), message.getContentRaw()));
-
-    Text text =
-        Text.of(
-            String.format(
-                "§9[Discord] §b%s: §f%s",
-                Objects.requireNonNull(message.getGuild().getMember(message.getAuthor()))
-                    .getEffectiveName(),
-                message.getContentRaw()));
-
-    for (ServerPlayerEntity player : SERVER.getPlayerManager().getPlayerList()) {
-      player.sendMessage(text, false);
-    }
-  }
-
-  public EmbedBuilder getEmbedBuilder(
-      String message, @Nullable ServerPlayerEntity player, String ServerName) {
-
-    if (player == null) {
-      return new EmbedBuilder()
-          .setAuthor(ServerName)
-          .setDescription(message)
-          .setFooter(ServerName)
-          .setTimestamp(Instant.now())
-          .setColor(4321431);
-    }
-
-    return new EmbedBuilder()
-        .setAuthor(
-            player.getName().getString(),
-            String.format("https://namemc.com/profile/%s", player.getName().getString()),
-            String.format("https://minotar.net/avatar/%s/100.png", player.getUuidAsString()))
-        .setDescription(message)
-        .setFooter(ServerName)
-        .setTimestamp(Instant.now())
-        .setColor(39129);
-  }
-
-  public void sendMessage(MessageEmbed embed) {
+  public void sendEmbedMessage(String message, @Nullable ServerPlayerEntity player, String ServerName) {
 
     if (CHANNEL == null) {
       LOGGER.error("Chat channel not found. Please check your config file.");
       return;
     }
 
-    CHANNEL.sendMessageEmbeds(embed).queue();
+    if (player == null) {
+      CHANNEL.sendMessageEmbeds(new EmbedBuilder()
+              .setAuthor(ServerName)
+              .setDescription(message)
+              .setFooter(ServerName)
+              .setTimestamp(Instant.now())
+              .setColor(4321431).build())
+              .queue();
+    } else {
+      CHANNEL.sendMessageEmbeds(new EmbedBuilder()
+              .setAuthor(
+                      player.getName().getString(),
+                      String.format("https://namemc.com/profile/%s", player.getName().getString()),
+                      String.format("https://minotar.net/avatar/%s/100.png", player.getUuidAsString())
+              )
+              .setDescription(message)
+              .setFooter(ServerName)
+              .setTimestamp(Instant.now())
+              .setColor(39129).build())
+              .queue();
+    }
+  }
+
+  public void sendMessage(String message) {
+    if (CHANNEL == null) {
+      LOGGER.error("Chat channel not found. Please check your config file.");
+      return;
+    }
+
+    CHANNEL.sendMessage(message).queue();
   }
 }
