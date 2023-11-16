@@ -1,22 +1,22 @@
 {
   "schemaVersion": 1,
-  "id": "guardian",
+  "id": "alfred",
   "version": "${version}",
-  "name": "Guardian",
+  "name": "alfred",
   "description": "",
   "authors": [],
   "contact": {
-    "repo": "https://github.com/Jordan McKoy/Guardian"
+    "repo": "https://github.com/tropic-oss/alfred"
   },
   "license": "GPL-3.0",
   "environment": "server",
   "entrypoints": {
     "server": [
-      "com.tropicoss.guardian.Guardian"
+      "com.tropicoss.minecraft.alfred.Alfred"
     ]
   },
   "mixins": [
-    "guardian.mixins.json"
+    "alfred.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=${loader_version}",

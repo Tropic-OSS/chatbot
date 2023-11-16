@@ -1,14 +1,15 @@
-package com.tropicoss.guardian.serialization;
+package com.tropicoss.minecraft.alfred.common;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import com.tropicoss.guardian.AbstractMessage;
-import com.tropicoss.guardian.MessageType;
-import java.io.IOException;
+import com.tropicoss.minecraft.alfred.AbstractMessage;
+import com.tropicoss.minecraft.alfred.MessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 public class MessageDeserializer extends StdDeserializer<AbstractMessage> {
 
