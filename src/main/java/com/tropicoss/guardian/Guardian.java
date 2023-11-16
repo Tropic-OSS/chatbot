@@ -1,15 +1,11 @@
 package com.tropicoss.guardian;
 
-import com.tropicoss.guardian.bot.Bot;
-import com.tropicoss.guardian.events.EventHandler;
 import com.tropicoss.guardian.events.EventHandlerBuilder;
 import com.tropicoss.guardian.config.Config;
 import com.tropicoss.guardian.config.WebSocketConfig;
 import com.tropicoss.guardian.minecraft.Commands;
 import com.tropicoss.guardian.socket.Client;
 import com.tropicoss.guardian.socket.Server;
-import java.net.InetSocketAddress;
-import java.net.URI;
 
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -32,9 +28,7 @@ public class Guardian implements DedicatedServerModInitializer {
     try {
 
       ServerLifecycleEvents.SERVER_STARTED.register(
-          server -> {
-            SERVER = server;
-          });
+          server -> SERVER = server);
 
       Commands.register();
 
@@ -54,7 +48,7 @@ public class Guardian implements DedicatedServerModInitializer {
              new EventHandlerBuilder()
                     .listenToPlayerChat()
                     .listenToServerChat()
-                    .listenToServerStarting()
+                    .listenToServerStarted()
                     .listenToServerStopping()
                     .build();
       }

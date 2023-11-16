@@ -5,7 +5,6 @@ import com.google.gson.GsonBuilder;
 import com.tropicoss.guardian.Message;
 import com.tropicoss.guardian.config.Config;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import org.java_websocket.client.WebSocketClient;
 
@@ -14,11 +13,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.util.Objects;
+
+import static com.tropicoss.guardian.Guardian.SOCKET_CLIENT;
 
 public class Client extends WebSocketClient {
 
+  private static final Gson gson = new GsonBuilder()
+          .registerTypeAdapter(com.tropicoss.guardian.Message.class, new com.tropicoss.guardian.Message.MessageSerializer())
+          .registerTypeAdapter(com.tropicoss.guardian.Message.class, new com.tropicoss.guardian.Message.MessageDeserializer())
+          .create();
+
   private static MinecraftServer SERVER;
+
   private static final Logger LOGGER = LoggerFactory.getLogger("Guardian WebSocket Client");
 
   public Client(URI serverUri, MinecraftServer server) {
@@ -31,6 +37,10 @@ public class Client extends WebSocketClient {
     LOGGER.info("╔═══════════════════════════════════════╗");
     LOGGER.info("║         Connected To Server           ║");
     LOGGER.info("╚═══════════════════════════════════════╝");
+
+    com.tropicoss.guardian.Message msg = new com.tropicoss.guardian.Message(Config.Generic.name, "Server Event", "Server has started!");
+
+    SOCKET_CLIENT.send(gson.toJson(msg));
   }
 
   @Override
@@ -51,7 +61,7 @@ public class Client extends WebSocketClient {
                             "§9[%s] §b%s: §f%s", msg.getOrigin(), msg.getSender(), msg.getContent()));
 
 
-    SERVER.getPlayerManager().getPlayerList().forEach(player -> {player.sendMessage(text, false);});
+    SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(text, false));
   }
 
   @Override

@@ -113,15 +113,6 @@ public class EventHandler implements MinecraftEvents.PlayerChat, MinecraftEvents
 
                 SOCKET_CLIENT.connect();
 
-                if (SOCKET_CLIENT.isOpen())
-                {
-                    LOGGER.info("Connected to server!");
-
-                    com.tropicoss.guardian.Message msg = new com.tropicoss.guardian.Message(Config.Generic.name, "Server Event", "Server has started!");
-
-                    SOCKET_CLIENT.send(gson.toJson(msg));
-                }
-
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
