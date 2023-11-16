@@ -6,6 +6,7 @@ public class WebSocketConfig {
   public String host = "localhost";
   public int port = 9090;
   public String key = "YourServerKey";
+
   public enum Type {
     SERVER,
     CLIENT

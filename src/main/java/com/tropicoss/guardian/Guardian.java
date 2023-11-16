@@ -1,12 +1,11 @@
 package com.tropicoss.guardian;
 
-import com.tropicoss.guardian.events.EventHandlerBuilder;
 import com.tropicoss.guardian.config.Config;
 import com.tropicoss.guardian.config.WebSocketConfig;
+import com.tropicoss.guardian.events.EventHandlerBuilder;
 import com.tropicoss.guardian.minecraft.Commands;
 import com.tropicoss.guardian.socket.Client;
 import com.tropicoss.guardian.socket.Server;
-
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.server.MinecraftServer;
@@ -27,30 +26,29 @@ public class Guardian implements DedicatedServerModInitializer {
   public void onInitializeServer() {
     try {
 
-      ServerLifecycleEvents.SERVER_STARTED.register(
-          server -> SERVER = server);
-
-      Commands.register();
+      ServerLifecycleEvents.SERVER_STARTED.register(server -> SERVER = server);
 
       if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.SERVER)) {
 
-          new EventHandlerBuilder()
-                  .listenToDiscordChat()
-                  .listenToPlayerChat()
-                  .listenToServerStarting()
-                  .listenToServerStarted()
-                  .listenToServerStopping()
-                  .build();
+        new EventHandlerBuilder()
+            .listenToDiscordChat()
+            .listenToPlayerChat()
+            .listenToServerStarting()
+            .listenToServerStarted()
+            .listenToServerStopping()
+            .build();
       }
 
       if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.CLIENT)) {
 
-             new EventHandlerBuilder()
-                    .listenToPlayerChat()
-                    .listenToServerChat()
-                    .listenToServerStarted()
-                    .listenToServerStopping()
-                    .build();
+        Commands.register();
+
+        new EventHandlerBuilder()
+            .listenToPlayerChat()
+            .listenToServerChat()
+            .listenToServerStarted()
+            .listenToServerStopping()
+            .build();
       }
 
       LOGGER.info("╔═══════════════════════════════════════╗");

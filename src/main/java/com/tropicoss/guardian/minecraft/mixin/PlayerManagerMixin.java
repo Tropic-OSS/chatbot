@@ -16,12 +16,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(PlayerManager.class)
 public class PlayerManagerMixin {
 
-    @Unique
-    private final EventHandler eventHandler = new EventHandler();
+  @Unique private final EventHandler eventHandler = new EventHandler();
+
   // Called when the server sends a message (player join/leave, death messages, advancements)
-  @Inject(
-      at = @At("HEAD"),
-      method = "broadcast(Lnet/minecraft/text/Text;Z)V")
+  @Inject(at = @At("HEAD"), method = "broadcast(Lnet/minecraft/text/Text;Z)V")
   private void broadcast(Text message, boolean overlay, CallbackInfo ci) {
     MinecraftServer server = ((PlayerManager) (Object) this).getServer();
     eventHandler.onServerChat(server, message);
@@ -31,7 +29,7 @@ public class PlayerManagerMixin {
   @Inject(
       at = @At("HEAD"),
       method =
-              "broadcast(Lnet/minecraft/network/message/SignedMessage;Lnet/minecraft/server/network/ServerPlayerEntity;Lnet/minecraft/network/message/MessageType$Parameters;)V")
+          "broadcast(Lnet/minecraft/network/message/SignedMessage;Lnet/minecraft/server/network/ServerPlayerEntity;Lnet/minecraft/network/message/MessageType$Parameters;)V")
   private void broadcast(
       SignedMessage message,
       ServerPlayerEntity sender,
