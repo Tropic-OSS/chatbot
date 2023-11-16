@@ -1,7 +1,6 @@
 package com.tropicoss.guardian.bot;
 
-import static com.tropicoss.guardian.Guardian.*;
-
+import com.tropicoss.guardian.PlayerInfoFetcher;
 import com.tropicoss.guardian.bot.adapters.MessagesAdapter;
 import com.tropicoss.guardian.config.Config;
 import java.time.Instant;
@@ -12,7 +11,6 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
-import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,7 +71,7 @@ public class Bot {
                 .setDescription("Server has started!")
                 .setFooter(Config.Generic.name)
                 .setTimestamp(Instant.now())
-                .setColor(35406)
+                .setColor(39129)
                 .build())
         .queue();
   }
@@ -86,7 +84,7 @@ public class Bot {
                 .setDescription("Server has shut down!")
                 .setFooter(Config.Generic.name)
                 .setTimestamp(Instant.now())
-                .setColor(16065893)
+                .setColor(39129)
                 .build())
         .queue();
 
@@ -94,48 +92,28 @@ public class Bot {
   }
 
   public void sendEmbedMessage(
-      String message, @Nullable ServerPlayerEntity player, String ServerName) {
+      String message, @Nullable PlayerInfoFetcher.Profile profile, String ServerName) {
 
     if (CHANNEL == null) {
       LOGGER.error("Chat channel not found. Please check your config file.");
       return;
     }
+    EmbedBuilder builder =
+        new EmbedBuilder()
+            .setDescription(message)
+            .setFooter(ServerName)
+            .setTimestamp(Instant.now())
+            .setColor(39129);
 
-    if (player == null) {
-      CHANNEL
-          .sendMessageEmbeds(
-              new EmbedBuilder()
-                  .setAuthor(ServerName)
-                  .setDescription(message)
-                  .setFooter(ServerName)
-                  .setTimestamp(Instant.now())
-                  .setColor(4321431)
-                  .build())
-          .queue();
+    if (profile != null) {
+      builder.setAuthor(
+          profile.data.player.username,
+          String.format("https://namemc.com/profile/%s", profile.data.player.username),
+          profile.data.player.avatar);
     } else {
-      CHANNEL
-          .sendMessageEmbeds(
-              new EmbedBuilder()
-                  .setAuthor(
-                      player.getName().getString(),
-                      String.format("https://namemc.com/profile/%s", player.getName().getString()),
-                      String.format(
-                          "https://minotar.net/avatar/%s/100.png", player.getUuidAsString()))
-                  .setDescription(message)
-                  .setFooter(ServerName)
-                  .setTimestamp(Instant.now())
-                  .setColor(39129)
-                  .build())
-          .queue();
-    }
-  }
-
-  public void sendMessage(String message) {
-    if (CHANNEL == null) {
-      LOGGER.error("Chat channel not found. Please check your config file.");
-      return;
+      builder.setAuthor(ServerName);
     }
 
-    CHANNEL.sendMessage(message).queue();
+    CHANNEL.sendMessageEmbeds(builder.build()).queue();
   }
 }

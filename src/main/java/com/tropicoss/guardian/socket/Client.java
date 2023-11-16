@@ -1,13 +1,16 @@
 package com.tropicoss.guardian.socket;
 
+import static com.tropicoss.guardian.Guardian.SERVER;
 import static com.tropicoss.guardian.Guardian.SOCKET_CLIENT;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.tropicoss.guardian.Message;
+import com.tropicoss.guardian.AbstractMessage;
+import com.tropicoss.guardian.MessageType;
 import com.tropicoss.guardian.config.Config;
+import com.tropicoss.guardian.serialization.MessageSerializer;
+import java.io.IOException;
 import java.net.URI;
-import net.minecraft.server.MinecraftServer;
+import java.util.UUID;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
@@ -15,22 +18,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Client extends WebSocketClient {
-
-  private static final Gson gson =
-      new GsonBuilder()
-          .registerTypeAdapter(
-              com.tropicoss.guardian.Message.class,
-              new com.tropicoss.guardian.Message.MessageSerializer())
-          .registerTypeAdapter(
-              com.tropicoss.guardian.Message.class,
-              new com.tropicoss.guardian.Message.MessageDeserializer())
-          .create();
   private static final Logger LOGGER = LoggerFactory.getLogger("Guardian WebSocket Client");
-  private static MinecraftServer SERVER;
 
-  public Client(URI serverUri, MinecraftServer server) {
+  public Client(URI serverUri) {
     super(serverUri);
-    SERVER = server;
   }
 
   @Override
@@ -39,29 +30,82 @@ public class Client extends WebSocketClient {
     LOGGER.info("║         Connected To Server           ║");
     LOGGER.info("╚═══════════════════════════════════════╝");
 
-    com.tropicoss.guardian.Message msg =
-        new com.tropicoss.guardian.Message(
-            Config.Generic.name, "Server Event", "Server has started!");
+    try {
+      AbstractMessage msg =
+          new AbstractMessage.ServerMessage(Config.Generic.name, "Connected to server") {};
 
-    SOCKET_CLIENT.send(gson.toJson(msg));
+      String json = MessageSerializer.serialize(msg);
+
+      SOCKET_CLIENT.send(json);
+    } catch (Exception e) {
+      LOGGER.error("Error sending message: " + e.getMessage());
+    }
   }
 
   @Override
   public void onMessage(String message) {
 
-    Gson gson =
-        new GsonBuilder()
-            .registerTypeAdapter(Message.class, new Message.MessageSerializer())
-            .registerTypeAdapter(Message.class, new Message.MessageDeserializer())
-            .create();
+    AbstractMessage msg;
+    try {
+      msg = MessageSerializer.deserialize(message);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
 
-    Message msg = gson.fromJson(message, Message.class);
+    MessageType type = msg.getMessageType();
 
-    LOGGER.info(String.format("[%s] %s: %s", msg.getOrigin(), msg.getSender(), msg.getContent()));
+    switch (type) {
+      case DISCORD_MESSAGE:
+        handleDiscordMessage((AbstractMessage.DiscordMessage) msg);
+        break;
+      case CLIENT_MESSAGE:
+        handleClientMessage((AbstractMessage.ClientMessage) msg);
+        break;
+      case SERVER_MESSAGE:
+        handleServerMessage((AbstractMessage.ServerMessage) msg);
+        break;
+      default:
+        LOGGER.error("Unknown message type: " + type);
+        break;
+    }
+  }
+
+  private void handleDiscordMessage(AbstractMessage.DiscordMessage msg) {
+    LOGGER.info(String.format("[%s] %s: %s", msg.getOrigin(), msg.getName(), msg.getMessage()));
 
     Text text =
         Text.of(
-            String.format("§9[%s] §b%s: §f%s", msg.getOrigin(), msg.getSender(), msg.getContent()));
+            String.format("§9[%s] §b%s: §f%s", msg.getOrigin(), msg.getName(), msg.getMessage()));
+
+    SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(text, false));
+  }
+
+  private void handleClientMessage(AbstractMessage.ClientMessage msg) {
+    ServerPlayerEntity playerEntity =
+        SERVER.getPlayerManager().getPlayer(UUID.fromString(msg.getPlayerUUID()));
+
+    assert playerEntity != null;
+
+    LOGGER.info(
+        String.format(
+            "[%s] %s: %s", msg.getOrigin(), playerEntity.getName().getString(), msg.getMessage()));
+
+    Text text =
+        Text.of(
+            String.format(
+                "§9[%s] §b%s: §f%s",
+                msg.getOrigin(), playerEntity.getName().getString(), msg.getMessage()));
+
+    SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(text, false));
+  }
+
+  private void handleServerMessage(AbstractMessage.ServerMessage msg) {
+
+    LOGGER.info(String.format("[%s] %s: %s", msg.getOrigin(), msg.getOrigin(), msg.getMessage()));
+
+    Text text =
+        Text.of(
+            String.format("§9[%s] §b%s: §f%s", msg.getOrigin(), msg.getOrigin(), msg.getMessage()));
 
     SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(text, false));
   }

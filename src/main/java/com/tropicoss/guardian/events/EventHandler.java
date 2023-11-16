@@ -3,11 +3,13 @@ package com.tropicoss.guardian.events;
 import static com.tropicoss.guardian.Guardian.SOCKET_CLIENT;
 import static com.tropicoss.guardian.Guardian.SOCKET_SERVER;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.tropicoss.guardian.AbstractMessage;
+import com.tropicoss.guardian.PlayerInfoFetcher;
 import com.tropicoss.guardian.bot.Bot;
 import com.tropicoss.guardian.config.Config;
 import com.tropicoss.guardian.config.WebSocketConfig;
+import com.tropicoss.guardian.serialization.MessageSerializer;
 import com.tropicoss.guardian.socket.Client;
 import com.tropicoss.guardian.socket.Server;
 import java.net.InetSocketAddress;
@@ -29,83 +31,96 @@ public class EventHandler
         ServerLifecycleEvents.ServerStarted,
         ServerLifecycleEvents.ServerStopping {
   private static final Logger LOGGER = LoggerFactory.getLogger("Guardian Events");
-  private static final Gson gson =
-      new GsonBuilder()
-          .registerTypeAdapter(
-              com.tropicoss.guardian.Message.class,
-              new com.tropicoss.guardian.Message.MessageSerializer())
-          .registerTypeAdapter(
-              com.tropicoss.guardian.Message.class,
-              new com.tropicoss.guardian.Message.MessageDeserializer())
-          .create();
   private static MinecraftServer SERVER;
 
   @Override
   public void onPlayerChat(MinecraftServer server, Text text, ServerPlayerEntity sender) {
-    com.tropicoss.guardian.Message msg =
-        new com.tropicoss.guardian.Message(
-            Config.Generic.name, sender.getName().getString(), text.getString());
+    try {
+      AbstractMessage msg =
+          new AbstractMessage.ClientMessage(
+              Config.Generic.name, sender.getUuid().toString(), text.getString()) {};
 
-    String json = gson.toJson(msg);
+      String json = MessageSerializer.serialize(msg);
 
-    if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.SERVER)) {
-      Bot bot = Bot.getInstance();
+      if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.SERVER)) {
+        Bot bot = Bot.getInstance();
 
-      bot.sendEmbedMessage(text.getString(), sender, Config.Generic.name);
+        PlayerInfoFetcher.Profile profile =
+            PlayerInfoFetcher.getProfile(sender.getUuid().toString());
 
-      SOCKET_SERVER.broadcast(json);
-    }
+        bot.sendEmbedMessage(text.getString(), profile, Config.Generic.name);
 
-    if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.CLIENT)) {
-      SOCKET_CLIENT.send(json);
+        SOCKET_SERVER.broadcast(json);
+      }
+
+      if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.CLIENT)) {
+        SOCKET_CLIENT.send(json);
+      }
+    } catch (JsonProcessingException e) {
+      LOGGER.error("Error parsing message: " + e.getMessage());
     }
   }
 
   @Override
   public void onServerChat(MinecraftServer server, Text text) {
-    com.tropicoss.guardian.Message msg =
-        new com.tropicoss.guardian.Message(Config.Generic.name, "Server Event", text.getString());
+    try {
+      AbstractMessage.ServerMessage msg =
+          new AbstractMessage.ServerMessage(Config.Generic.name, text.getString());
 
-    String json = gson.toJson(msg);
+      String json = MessageSerializer.serialize(msg);
 
-    if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.SERVER)) {
-      Bot bot = Bot.getInstance();
+      if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.SERVER)) {
+        Bot bot = Bot.getInstance();
 
-      bot.sendEmbedMessage(text.getString(), null, Config.Generic.name);
+        bot.sendEmbedMessage(text.getString(), null, Config.Generic.name);
 
-      SOCKET_SERVER.broadcast(json);
-    }
+        SOCKET_SERVER.broadcast(json);
+      }
 
-    if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.CLIENT)) {
-      SOCKET_CLIENT.send(json);
+      if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.CLIENT)) {
+        SOCKET_CLIENT.send(json);
+      }
+    } catch (JsonProcessingException e) {
+      LOGGER.error("Error parsing message: " + e.getMessage());
     }
   }
 
   @Override
   public void onDiscordChat(Message message) {
-    if (message.getAuthor().isBot()) return;
+    try {
+      if (message.getAuthor().isBot()) return;
 
-    if (!message.getEmbeds().isEmpty()) return;
+      if (!message.getEmbeds().isEmpty()) return;
 
-    LOGGER.info(
-        String.format("[Discord] %s: %s", message.getAuthor().getName(), message.getContentRaw()));
+      var member =
+          Objects.requireNonNull(message.getGuild().getMember(message.getAuthor()))
+              .getEffectiveName();
 
-    Text text =
-        Text.of(
-            String.format(
-                "§9[Discord] §b%s: §f%s",
-                Objects.requireNonNull(message.getGuild().getMember(message.getAuthor()))
-                    .getEffectiveName(),
-                message.getContentRaw()));
+      LOGGER.info(String.format("[Discord] %s: %s", member, message.getContentRaw()));
 
-    // Send message to all players. Broadcast adds the colors to the console sadly.
-    SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(text, false));
+      Text text = Text.of(String.format("§9[Discord] §b%s: §f%s", member, message.getContentRaw()));
+
+      // Send message to all players. Broadcast adds the colors to the console sadly.
+      SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(text, false));
+
+      AbstractMessage.DiscordMessage msg =
+          new AbstractMessage.DiscordMessage("Discord", member, message.getContentRaw());
+
+      String json = MessageSerializer.serialize(msg);
+
+      if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.SERVER)) {
+        SOCKET_SERVER.broadcast(json);
+      }
+    } catch (JsonProcessingException e) {
+      LOGGER.error("Error parsing message: " + e.getMessage());
+    }
   }
 
   @Override
   public void onServerStarted(MinecraftServer server) {
     if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.SERVER)) {
       try {
+        // Starts the Bot
         Bot.getInstance();
 
         SOCKET_SERVER = new Server(new InetSocketAddress(Config.WebSocket.port));
@@ -123,7 +138,7 @@ public class EventHandler
       try {
         String uri = String.format("ws://%s:%d", Config.WebSocket.host, Config.WebSocket.port);
 
-        SOCKET_CLIENT = new Client(URI.create(uri), SERVER);
+        SOCKET_CLIENT = new Client(URI.create(uri));
 
         SOCKET_CLIENT.connect();
 
@@ -143,6 +158,7 @@ public class EventHandler
 
     if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.SERVER)) {
       try {
+        Bot.getInstance().onShutDown();
         SOCKET_SERVER.stop(100);
       } catch (InterruptedException e) {
         throw new RuntimeException(e);

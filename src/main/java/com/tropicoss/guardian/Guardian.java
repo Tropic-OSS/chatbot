@@ -46,6 +46,7 @@ public class Guardian implements DedicatedServerModInitializer {
         new EventHandlerBuilder()
             .listenToPlayerChat()
             .listenToServerChat()
+            .listenToServerStarting()
             .listenToServerStarted()
             .listenToServerStopping()
             .build();

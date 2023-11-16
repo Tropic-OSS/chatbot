@@ -2,11 +2,13 @@ package com.tropicoss.guardian.socket;
 
 import static com.tropicoss.guardian.Guardian.SERVER;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.tropicoss.guardian.Message;
+import com.tropicoss.guardian.AbstractMessage;
+import com.tropicoss.guardian.MessageType;
+import com.tropicoss.guardian.PlayerInfoFetcher;
 import com.tropicoss.guardian.bot.Bot;
 import com.tropicoss.guardian.config.Config;
+import com.tropicoss.guardian.serialization.MessageSerializer;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import net.minecraft.text.Text;
 import org.java_websocket.WebSocket;
@@ -38,38 +40,68 @@ public class Server extends WebSocketServer {
   @Override
   public void onMessage(WebSocket conn, String message) {
 
-    Gson gson =
-        new GsonBuilder()
-            .registerTypeAdapter(Message.class, new Message.MessageSerializer())
-            .registerTypeAdapter(Message.class, new Message.MessageDeserializer())
-            .create();
+    AbstractMessage msg;
+    try {
+      msg = MessageSerializer.deserialize(message);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    MessageType type = msg.getMessageType();
 
-    Message msg = gson.fromJson(message, Message.class);
+    switch (type) {
+      case SERVER_MESSAGE:
+        handleServerMessage((AbstractMessage.ServerMessage) msg);
+        break;
+      case CLIENT_MESSAGE:
+        handleClientMessage((AbstractMessage.ClientMessage) msg);
+        break;
+    }
+  }
 
-    LOGGER.info(String.format("[%s] %s: %s", msg.getOrigin(), msg.getSender(), msg.getContent()));
+  private void handleClientMessage(AbstractMessage.ClientMessage msg) {
+
+    PlayerInfoFetcher.Profile profile = PlayerInfoFetcher.getProfile(msg.getPlayerUUID());
+
+    if (profile == null) {
+      LOGGER.error("Error fetching player info for UUID: " + msg.getPlayerUUID());
+      return;
+    }
+
+    LOGGER.info(
+        String.format(
+            "[%s] %s: %s", msg.getOrigin(), profile.data.player.username, msg.getMessage()));
 
     Text text =
         Text.of(
-            String.format("§9[%s] §b%s: §f%s", msg.getOrigin(), msg.getSender(), msg.getContent()));
+            String.format(
+                "§9[%s] §b%s: §f%s",
+                msg.getOrigin(), profile.data.player.username, msg.getMessage()));
 
     SERVER
         .getPlayerManager()
         .getPlayerList()
         .forEach(
-            player -> {
-              player.sendMessage(text, false);
-            });
+            player -> player.sendMessage(text, false));
 
     Bot bot = Bot.getInstance();
 
-    var player = SERVER.getPlayerManager().getPlayer(msg.getSender());
+    bot.sendEmbedMessage(msg.getMessage(), profile, msg.getOrigin());
+  }
 
-    if (player != null) {
-      bot.sendEmbedMessage(msg.getContent(), player, msg.getOrigin());
-      return;
-    }
+  private void handleServerMessage(AbstractMessage.ServerMessage msg) {
+    LOGGER.info(String.format("[%s] %s", msg.getOrigin(), msg.getMessage()));
 
-    bot.sendEmbedMessage(msg.getContent(), null, msg.getOrigin());
+    Text text = Text.of(String.format("§9[%s] §f%s", msg.getOrigin(), msg.getMessage()));
+
+    SERVER
+        .getPlayerManager()
+        .getPlayerList()
+        .forEach(
+            player -> player.sendMessage(text, false));
+
+    Bot bot = Bot.getInstance();
+
+    bot.sendEmbedMessage(msg.getMessage(), null, msg.getOrigin());
   }
 
   @Override

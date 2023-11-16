@@ -3,7 +3,6 @@ package com.tropicoss.guardian.minecraft;
 import static com.tropicoss.guardian.Guardian.SOCKET_CLIENT;
 import static net.minecraft.server.command.CommandManager.literal;
 
-import com.tropicoss.guardian.config.Config;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.text.Text;
 
