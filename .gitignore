@@ -121,3 +121,4 @@ run/
 .env
 
 remappedSrc/
+/.vscode/
