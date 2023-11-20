@@ -11,6 +11,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.server.MinecraftServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.tropicoss.Library;
 
 public class Alfred implements DedicatedServerModInitializer {
 
@@ -43,6 +44,9 @@ public class Alfred implements DedicatedServerModInitializer {
 
                 Commands.register();
 
+                Library library = new Library();
+
+                library.someLibraryMethod();
                 new EventHandlerBuilder()
                         .listenToPlayerChat()
                         .listenToServerChat()

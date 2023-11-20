@@ -41,6 +41,16 @@ public class Client extends WebSocketClient {
     }
 
     @Override
+    public void connect() {
+        try {
+
+            super.connectBlocking();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public void onMessage(String message) {
 
         AbstractMessage msg;
@@ -113,9 +123,7 @@ public class Client extends WebSocketClient {
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
-        LOGGER.info("╔═══════════════════════════════════════╗");
-        LOGGER.info("║       Disconnected From Server        ║");
-        LOGGER.info("╚═══════════════════════════════════════╝");
+        LOGGER.info("Disconnected From Server");
     }
 
     @Override

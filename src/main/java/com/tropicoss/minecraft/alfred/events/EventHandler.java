@@ -160,12 +160,16 @@ public class EventHandler
                 Bot.getInstance().onShutDown();
                 Alfred.SOCKET_SERVER.stop(100);
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                LOGGER.error("Error closing server: " + e.getMessage());
             }
         }
 
         if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.CLIENT)) {
-            Alfred.SOCKET_CLIENT.close();
+            try {
+                Alfred.SOCKET_CLIENT.closeBlocking();
+            } catch (InterruptedException e) {
+                LOGGER.error("Error closing client: " + e.getMessage());
+            }
         }
     }
 }

@@ -1,7 +1,6 @@
 package com.tropicoss.minecraft.alfred.bot;
 
 import com.tropicoss.minecraft.alfred.PlayerInfoFetcher;
-import com.tropicoss.minecraft.alfred.bot.adapters.MessagesAdapter;
 import com.tropicoss.minecraft.alfred.config.Config;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
@@ -17,6 +16,7 @@ import java.time.Instant;
 import static com.tropicoss.minecraft.alfred.Alfred.LOGGER;
 
 public class Bot {
+
     private static final Bot instance;
 
     static {
@@ -28,18 +28,18 @@ public class Bot {
     }
 
     private final JDA BOT;
+
     private final TextChannel CHANNEL;
 
     private Bot() throws InterruptedException {
         try {
-            BOT =
-                    JDABuilder.createDefault(Config.Bot.token)
-                            .setChunkingFilter(ChunkingFilter.ALL)
-                            .setMemberCachePolicy(MemberCachePolicy.ALL)
-                            .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.MESSAGE_CONTENT)
-                            .addEventListeners(new MessagesAdapter())
-                            .build()
-                            .awaitReady();
+            BOT = JDABuilder.createDefault(Config.Bot.token)
+                    .setChunkingFilter(ChunkingFilter.ALL)
+                    .setMemberCachePolicy(MemberCachePolicy.ALL)
+                    .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.MESSAGE_CONTENT)
+                    .addEventListeners(new Listeners())
+                    .build()
+                    .awaitReady();
 
             CHANNEL = BOT.getTextChannelById(Config.Bot.channel);
         } catch (Exception e) {
@@ -87,7 +87,18 @@ public class Bot {
                                 .build())
                 .queue();
 
-        BOT.shutdownNow();
+        try {
+            BOT.shutdownNow();
+        } catch (Exception e) {
+            switch (e.getClass().getSimpleName()) {
+                case "InterruptedIOException":
+                    LOGGER.error("Bot is shutting down.");
+                    break;
+                default:
+                    LOGGER.error("Error shutting down bot: " + e.getMessage());
+                    break;
+            }
+        }
     }
 
     public void sendEmbedMessage(
@@ -97,6 +108,7 @@ public class Bot {
             LOGGER.error("Chat channel not found. Please check your config file.");
             return;
         }
+
         EmbedBuilder builder =
                 new EmbedBuilder()
                         .setDescription(message)
