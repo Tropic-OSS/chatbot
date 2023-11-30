@@ -1,21 +1,22 @@
 package com.tropicoss.minecraft.alfred.socket;
 
-import com.tropicoss.minecraft.alfred.AbstractMessage;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.tropicoss.minecraft.alfred.Alfred;
-import com.tropicoss.minecraft.alfred.MessageType;
-import com.tropicoss.minecraft.alfred.PlayerInfoFetcher;
-import com.tropicoss.minecraft.alfred.common.MessageSerializer;
 import com.tropicoss.minecraft.alfred.config.Config;
-import net.minecraft.text.Text;
+import com.tropicoss.minecraft.alfred.socket.messages.*;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
-import java.io.IOException;
 import java.net.URI;
 
 import static com.tropicoss.minecraft.alfred.Alfred.LOGGER;
 
 public class Client extends WebSocketClient {
+
+    private final Gson gson = new GsonBuilder()
+            .registerTypeAdapterFactory(new WebsocketMessageTypeAdapterFactory())
+            .create();
 
     public Client(URI serverUri) {
         super(serverUri);
@@ -23,54 +24,37 @@ public class Client extends WebSocketClient {
 
     @Override
     public void onOpen(ServerHandshake handshake) {
-        LOGGER.info("╔═══════════════════════════════════════╗");
-        LOGGER.info("║         Connected To Server           ║");
-        LOGGER.info("╚═══════════════════════════════════════╝");
 
         try {
-            AbstractMessage msg =
-                    new AbstractMessage.ServerMessage(Config.Generic.name, "Connected to server") {
-                    };
+            LOGGER.info("Connected To Server");
 
-            String json = MessageSerializer.serialize(msg);
+            ServerMessage msg = new ServerMessage("Connected to server", Config.Generic.name);
+
+            String json = gson.toJson(msg, ServerMessage.class);
 
             Alfred.SOCKET_CLIENT.send(json);
+
         } catch (Exception e) {
             LOGGER.error("Error sending message: " + e.getMessage());
         }
     }
 
     @Override
-    public void connect() {
-        try {
-
-            super.connectBlocking();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
     public void onMessage(String message) {
 
-        AbstractMessage msg;
-        try {
-            msg = MessageSerializer.deserialize(message);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        WebsocketMessage msg = gson.fromJson(message, WebsocketMessage.class);
 
-        MessageType type = msg.getMessageType();
+        String type = msg.getMessageType();
 
         switch (type) {
-            case DISCORD_MESSAGE:
-                handleDiscordMessage((AbstractMessage.DiscordMessage) msg);
+            case "discord":
+                handleDiscordMessage((DiscordMessage) msg);
                 break;
-            case CLIENT_MESSAGE:
-                handleClientMessage((AbstractMessage.ClientMessage) msg);
+            case "chat":
+                handleChatMessage((ChatMessage) msg);
                 break;
-            case SERVER_MESSAGE:
-                handleServerMessage((AbstractMessage.ServerMessage) msg);
+            case "server":
+                handleServerMessage((ServerMessage) msg);
                 break;
             default:
                 LOGGER.error("Unknown message type: " + type);
@@ -78,47 +62,24 @@ public class Client extends WebSocketClient {
         }
     }
 
-    private void handleDiscordMessage(AbstractMessage.DiscordMessage msg) {
-        LOGGER.info(String.format("[%s] %s: %s", msg.getOrigin(), msg.getName(), msg.getMessage()));
+    private void handleDiscordMessage(DiscordMessage msg) {
+        LOGGER.info(msg.toConsoleString());
 
-        Text text =
-                Text.of(
-                        String.format("§9[%s] §b%s: §f%s", msg.getOrigin(), msg.getName(), msg.getMessage()));
-
-        Alfred.SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(text, false));
+        Alfred.SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(msg.toChatText(), false));
     }
 
-    private void handleClientMessage(AbstractMessage.ClientMessage msg) {
+    private void handleChatMessage(ChatMessage msg) {
 
-        PlayerInfoFetcher.Profile profile = PlayerInfoFetcher.getProfile(msg.getPlayerUUID());
+        LOGGER.info(msg.toConsoleString());
 
-        if (profile == null) {
-            LOGGER.error("Error fetching player info for UUID: " + msg.getPlayerUUID());
-            return;
-        }
-
-        LOGGER.info(
-                String.format(
-                        "[%s] %s: %s", msg.getOrigin(), profile.data.player.username, msg.getMessage()));
-
-        Text text =
-                Text.of(
-                        String.format(
-                                "§9[%s] §b%s: §f%s",
-                                msg.getOrigin(), profile.data.player.username, msg.getMessage()));
-
-        Alfred.SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(text, false));
+        Alfred.SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(msg.toChatText(), false));
     }
 
-    private void handleServerMessage(AbstractMessage.ServerMessage msg) {
+    private void handleServerMessage(ServerMessage msg) {
 
-        LOGGER.info(String.format("[%s] %s: %s", msg.getOrigin(), msg.getOrigin(), msg.getMessage()));
+        LOGGER.info(msg.toConsoleString());
 
-        Text text =
-                Text.of(
-                        String.format("§9[%s] §b%s: §f%s", msg.getOrigin(), msg.getOrigin(), msg.getMessage()));
-
-        Alfred.SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(text, false));
+        Alfred.SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(msg.toChatText(), false));
     }
 
     @Override

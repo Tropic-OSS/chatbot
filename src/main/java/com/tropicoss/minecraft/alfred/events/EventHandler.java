@@ -1,15 +1,17 @@
 package com.tropicoss.minecraft.alfred.events;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.tropicoss.minecraft.alfred.AbstractMessage;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.tropicoss.minecraft.alfred.Alfred;
-import com.tropicoss.minecraft.alfred.PlayerInfoFetcher;
 import com.tropicoss.minecraft.alfred.bot.Bot;
-import com.tropicoss.minecraft.alfred.common.MessageSerializer;
 import com.tropicoss.minecraft.alfred.config.Config;
 import com.tropicoss.minecraft.alfred.config.WebSocketConfig;
 import com.tropicoss.minecraft.alfred.socket.Client;
 import com.tropicoss.minecraft.alfred.socket.Server;
+import com.tropicoss.minecraft.alfred.socket.messages.ChatMessage;
+import com.tropicoss.minecraft.alfred.socket.messages.DiscordMessage;
+import com.tropicoss.minecraft.alfred.socket.messages.ServerMessage;
+import com.tropicoss.minecraft.alfred.socket.messages.WebsocketMessageTypeAdapterFactory;
 import net.dv8tion.jda.api.entities.Message;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.server.MinecraftServer;
@@ -31,87 +33,69 @@ public class EventHandler
         ServerLifecycleEvents.ServerStopping {
     private static MinecraftServer SERVER;
 
+    private final Gson gson = new GsonBuilder()
+            .registerTypeAdapterFactory(new WebsocketMessageTypeAdapterFactory())
+            .create();
+
     @Override
     public void onPlayerChat(MinecraftServer server, Text text, ServerPlayerEntity sender) {
-        try {
-            AbstractMessage msg =
-                    new AbstractMessage.ClientMessage(
-                            Config.Generic.name, sender.getUuid().toString(), text.getString()) {
-                    };
 
-            String json = MessageSerializer.serialize(msg);
+        ChatMessage msg = new ChatMessage(Config.Generic.name, sender.getUuid().toString(), text.getString());
 
-            if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.SERVER)) {
-                Bot bot = Bot.getInstance();
+        String json = gson.toJson(msg);
 
-                PlayerInfoFetcher.Profile profile =
-                        PlayerInfoFetcher.getProfile(sender.getUuid().toString());
+        if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.SERVER)) {
+            Bot bot = Bot.getInstance();
 
-                bot.sendEmbedMessage(text.getString(), profile, Config.Generic.name);
+            bot.sendEmbedMessage(text.getString(), msg.getProfile(), Config.Generic.name);
 
-                Alfred.SOCKET_SERVER.broadcast(json);
-            }
+            Alfred.SOCKET_SERVER.broadcast(json);
+        }
 
-            if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.CLIENT)) {
-                Alfred.SOCKET_CLIENT.send(json);
-            }
-        } catch (JsonProcessingException e) {
-            LOGGER.error("Error parsing message: " + e.getMessage());
+        if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.CLIENT)) {
+            Alfred.SOCKET_CLIENT.send(json);
         }
     }
 
     @Override
     public void onServerChat(MinecraftServer server, Text text) {
-        try {
-            AbstractMessage.ServerMessage msg =
-                    new AbstractMessage.ServerMessage(Config.Generic.name, text.getString());
+        ServerMessage msg = new ServerMessage(text.getString(), Config.Generic.name);
 
-            String json = MessageSerializer.serialize(msg);
+        String json = gson.toJson(msg);
 
-            if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.SERVER)) {
-                Bot bot = Bot.getInstance();
+        if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.SERVER)) {
+            Bot bot = Bot.getInstance();
 
-                bot.sendEmbedMessage(text.getString(), null, Config.Generic.name);
+            bot.sendEmbedMessage(text.getString(), null, Config.Generic.name);
 
-                Alfred.SOCKET_SERVER.broadcast(json);
-            }
+            Alfred.SOCKET_SERVER.broadcast(json);
+        }
 
-            if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.CLIENT)) {
-                Alfred.SOCKET_CLIENT.send(json);
-            }
-        } catch (JsonProcessingException e) {
-            LOGGER.error("Error parsing message: " + e.getMessage());
+        if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.CLIENT)) {
+            Alfred.SOCKET_CLIENT.send(json);
         }
     }
 
     @Override
     public void onDiscordChat(Message message) {
-        try {
-            if (message.getAuthor().isBot()) return;
+        if (message.getAuthor().isBot()) return;
 
-            if (!message.getEmbeds().isEmpty()) return;
+        if (!message.getEmbeds().isEmpty()) return;
 
-            var member =
-                    Objects.requireNonNull(message.getGuild().getMember(message.getAuthor()))
-                            .getEffectiveName();
+        String member = Objects.requireNonNull(message.getGuild().getMember(message.getAuthor()))
+                .getEffectiveName();
 
-            LOGGER.info(String.format("[Discord] %s: %s", member, message.getContentRaw()));
+        DiscordMessage msg = new DiscordMessage(message.getContentRaw(), member);
 
-            Text text = Text.of(String.format("§9[Discord] §b%s: §f%s", member, message.getContentRaw()));
+        LOGGER.info(msg.toConsoleString());
 
-            // Send message to all players. Broadcast adds the colors to the console sadly.
-            SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(text, false));
+        // Send message to all players. Broadcast adds the colors to the console sadly.
+        SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(msg.toChatText(), false));
 
-            AbstractMessage.DiscordMessage msg =
-                    new AbstractMessage.DiscordMessage("Discord", member, message.getContentRaw());
+        String json = gson.toJson(msg);
 
-            String json = MessageSerializer.serialize(msg);
-
-            if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.SERVER)) {
-                Alfred.SOCKET_SERVER.broadcast(json);
-            }
-        } catch (JsonProcessingException e) {
-            LOGGER.error("Error parsing message: " + e.getMessage());
+        if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.SERVER)) {
+            Alfred.SOCKET_SERVER.broadcast(json);
         }
     }
 
@@ -139,7 +123,7 @@ public class EventHandler
 
                 Alfred.SOCKET_CLIENT = new Client(URI.create(uri));
 
-                Alfred.SOCKET_CLIENT.connect();
+                Alfred.SOCKET_CLIENT.connectBlocking();
 
             } catch (Exception e) {
                 throw new RuntimeException(e);

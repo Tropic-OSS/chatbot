@@ -1,23 +1,27 @@
 package com.tropicoss.minecraft.alfred.socket;
 
-import com.tropicoss.minecraft.alfred.AbstractMessage;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.tropicoss.minecraft.alfred.Alfred;
-import com.tropicoss.minecraft.alfred.MessageType;
-import com.tropicoss.minecraft.alfred.PlayerInfoFetcher;
 import com.tropicoss.minecraft.alfred.bot.Bot;
-import com.tropicoss.minecraft.alfred.common.MessageSerializer;
 import com.tropicoss.minecraft.alfred.config.Config;
-import net.minecraft.text.Text;
+import com.tropicoss.minecraft.alfred.socket.messages.ChatMessage;
+import com.tropicoss.minecraft.alfred.socket.messages.ServerMessage;
+import com.tropicoss.minecraft.alfred.socket.messages.WebsocketMessage;
+import com.tropicoss.minecraft.alfred.socket.messages.WebsocketMessageTypeAdapterFactory;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 
 import static com.tropicoss.minecraft.alfred.Alfred.LOGGER;
 
 public class Server extends WebSocketServer {
+
+    private final Gson gson = new GsonBuilder()
+            .registerTypeAdapterFactory(new WebsocketMessageTypeAdapterFactory())
+            .create();
 
     public Server(InetSocketAddress address) {
         super(address);
@@ -38,66 +42,46 @@ public class Server extends WebSocketServer {
     @Override
     public void onMessage(WebSocket conn, String message) {
 
-        AbstractMessage msg;
-        try {
-            msg = MessageSerializer.deserialize(message);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        MessageType type = msg.getMessageType();
+        WebsocketMessage msg = gson.fromJson(message, WebsocketMessage.class);
+
+        String type = msg.getMessageType();
 
         switch (type) {
-            case SERVER_MESSAGE:
-                handleServerMessage((AbstractMessage.ServerMessage) msg);
+            case "server":
+                handleServerMessage((ServerMessage) msg);
                 break;
-            case CLIENT_MESSAGE:
-                handleClientMessage((AbstractMessage.ClientMessage) msg);
+            case "chat":
+                handleChatMessage((ChatMessage) msg);
                 break;
             default:
+                LOGGER.error("Invalid message");
                 break;
         }
     }
 
-    private void handleClientMessage(AbstractMessage.ClientMessage msg) {
+    private void handleChatMessage(ChatMessage msg) {
 
-        PlayerInfoFetcher.Profile profile = PlayerInfoFetcher.getProfile(msg.getPlayerUUID());
-
-        if (profile == null) {
-            LOGGER.error("Error fetching player info for UUID: " + msg.getPlayerUUID());
-            return;
-        }
-
-        LOGGER.info(
-                String.format(
-                        "[%s] %s: %s", msg.getOrigin(), profile.data.player.username, msg.getMessage()));
-
-        Text text =
-                Text.of(
-                        String.format(
-                                "§9[%s] §b%s: §f%s",
-                                msg.getOrigin(), profile.data.player.username, msg.getMessage()));
+        LOGGER.info(msg.toConsoleString());
 
         Alfred.SERVER
                 .getPlayerManager()
                 .getPlayerList()
                 .forEach(
-                        player -> player.sendMessage(text, false));
+                        player -> player.sendMessage(msg.toChatText(), false));
 
         Bot bot = Bot.getInstance();
 
-        bot.sendEmbedMessage(msg.getMessage(), profile, msg.getOrigin());
+        bot.sendEmbedMessage(msg.getContent(), msg.getProfile(), msg.getOrigin());
     }
 
-    private void handleServerMessage(AbstractMessage.ServerMessage msg) {
-        LOGGER.info(String.format("[%s] %s", msg.getOrigin(), msg.getMessage()));
-
-        Text text = Text.of(String.format("§9[%s] §f%s", msg.getOrigin(), msg.getMessage()));
+    private void handleServerMessage(ServerMessage msg) {
+        LOGGER.info(msg.toConsoleString());
 
         Alfred.SERVER
                 .getPlayerManager()
                 .getPlayerList()
                 .forEach(
-                        player -> player.sendMessage(text, false));
+                        player -> player.sendMessage(msg.toChatText(), false));
 
         Bot bot = Bot.getInstance();
 
@@ -111,9 +95,7 @@ public class Server extends WebSocketServer {
 
     @Override
     public void onStart() {
-        LOGGER.info("╔═══════════════════════════════════════╗");
-        LOGGER.info("║         Socket Server Started         ║");
-        LOGGER.info("║         Listening on port " + Config.WebSocket.port + "        ║");
-        LOGGER.info("╚═══════════════════════════════════════╝");
+        LOGGER.info("Socket Server Started");
+        LOGGER.info("Listening on port " + Config.WebSocket.port);
     }
 }
