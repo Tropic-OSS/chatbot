@@ -33,7 +33,7 @@ public class DiscordMessage extends WebsocketMessage {
 
     @Override
     public Text toChatText() {
-        return Text.of(String.format("§9[Discord] §b%s: §f%s", this.getMessage(),
+        return Text.of(String.format("§9[Discord] §b%s: §f%s", this.getMember(),
                 this.getMessage()));
     }
 }

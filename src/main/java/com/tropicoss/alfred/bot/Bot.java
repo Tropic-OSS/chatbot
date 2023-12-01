@@ -1,18 +1,27 @@
 package com.tropicoss.alfred.bot;
 
+import com.google.gson.JsonObject;
 import com.tropicoss.alfred.Alfred;
 import com.tropicoss.alfred.PlayerInfoFetcher;
 import com.tropicoss.alfred.config.Config;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Webhook;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.Instant;
+
+import static com.tropicoss.alfred.Alfred.LOGGER;
 
 public class Bot {
 
@@ -30,6 +39,8 @@ public class Bot {
 
     private final TextChannel CHANNEL;
 
+    private Webhook WEBHOOK = null;
+
     private Bot() throws InterruptedException {
         try {
             BOT = JDABuilder.createDefault(Config.Bot.token)
@@ -41,6 +52,17 @@ public class Bot {
                     .awaitReady();
 
             CHANNEL = BOT.getTextChannelById(Config.Bot.channel);
+
+            for (Webhook webhook : CHANNEL.getGuild().retrieveWebhooks().complete()) {
+                if ("Alfred".equals(webhook.getName())) {
+                    WEBHOOK = webhook;
+                }
+            }
+
+            if(WEBHOOK == null) {
+                WEBHOOK = CHANNEL.createWebhook("Alfred").complete();
+            }
+
         } catch (Exception e) {
             switch (e.getClass().getSimpleName()) {
                 case "InvalidTokenException":
@@ -118,5 +140,25 @@ public class Bot {
         }
 
         CHANNEL.sendMessageEmbeds(builder.build()).queue();
+    }
+
+    public void sendWebhook(String message, PlayerInfoFetcher.Profile profile, String serverName) {
+        try {
+            JsonObject body = new JsonObject();
+
+            body.addProperty("username", String.format("%s - %s", profile.data.player.username, serverName));
+            body.addProperty("content", message);
+            body.addProperty("avatar_url", profile.data.player.avatar);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://discord.com/api/webhooks/1179988546354950144/pYSIyPfaBNuCZ2DCmIVzq5GMA0A2p7tG6UGEyH5LCQrJKdH7Wc01fEEFQM0q29E795ZF"))
+                    .header("Content-Type", "application/json")
+                    .method("POST", HttpRequest.BodyPublishers.ofString(body.toString()))
+                    .build();
+            HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+            System.out.println(response.body());
+        }  catch (IOException | InterruptedException e) {
+            LOGGER.error(e.getMessage());
+        }
     }
 }

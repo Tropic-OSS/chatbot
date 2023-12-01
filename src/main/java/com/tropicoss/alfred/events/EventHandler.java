@@ -3,6 +3,7 @@ package com.tropicoss.alfred.events;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.tropicoss.alfred.Alfred;
+import com.tropicoss.alfred.PlayerInfoFetcher;
 import com.tropicoss.alfred.bot.Bot;
 import com.tropicoss.alfred.config.Config;
 import com.tropicoss.alfred.config.WebSocketConfig;
@@ -45,7 +46,13 @@ public class EventHandler
         if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.SERVER)) {
             Bot bot = Bot.getInstance();
 
-            bot.sendEmbedMessage(text.getString(), msg.getProfile(), Config.Generic.name);
+          var profile = PlayerInfoFetcher.getProfile(msg.getUuid());
+
+          if(profile == null) {
+              return;
+          }
+
+            bot.sendWebhook(text.getString(), profile, Config.Generic.name);
 
             Alfred.SOCKET_SERVER.broadcast(json);
         }
