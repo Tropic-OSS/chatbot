@@ -1,0 +1,19 @@
+package com.tropicoss.alfred.bot;
+
+import com.tropicoss.alfred.config.Config;
+import com.tropicoss.alfred.events.EventHandler;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
+
+public class Listeners extends ListenerAdapter {
+    @Override
+    public void onMessageReceived(MessageReceivedEvent event) {
+        if (event.getAuthor().isBot()) return;
+
+        if (!event.getChannel().getId().equals(Config.Bot.channel)) return;
+
+        EventHandler eventHandler = new EventHandler();
+
+        eventHandler.onDiscordChat(event.getMessage());
+    }
+}
