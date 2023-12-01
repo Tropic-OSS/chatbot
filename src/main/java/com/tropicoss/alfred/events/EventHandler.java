@@ -46,13 +46,7 @@ public class EventHandler
         if (Config.WebSocket.enabled && Config.WebSocket.type.equals(WebSocketConfig.Type.SERVER)) {
             Bot bot = Bot.getInstance();
 
-          var profile = PlayerInfoFetcher.getProfile(msg.getUuid());
-
-          if(profile == null) {
-              return;
-          }
-
-            bot.sendWebhook(text.getString(), profile, Config.Generic.name);
+            bot.sendWebhook(text.getString(), msg.getProfile(), Config.Generic.name);
 
             Alfred.SOCKET_SERVER.broadcast(json);
         }

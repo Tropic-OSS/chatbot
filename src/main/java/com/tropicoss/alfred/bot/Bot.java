@@ -151,12 +151,11 @@ public class Bot {
             body.addProperty("avatar_url", profile.data.player.avatar);
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://discord.com/api/webhooks/1179988546354950144/pYSIyPfaBNuCZ2DCmIVzq5GMA0A2p7tG6UGEyH5LCQrJKdH7Wc01fEEFQM0q29E795ZF"))
+                    .uri(URI.create(WEBHOOK.getUrl()))
                     .header("Content-Type", "application/json")
                     .method("POST", HttpRequest.BodyPublishers.ofString(body.toString()))
                     .build();
             HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
-            System.out.println(response.body());
         }  catch (IOException | InterruptedException e) {
             LOGGER.error(e.getMessage());
         }

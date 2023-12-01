@@ -14,7 +14,7 @@ public class Commands {
                                 literal("alfred")
                                         .executes(
                                                 context -> {
-                                                    context.getSource().sendFeedback(() -> Text.literal("Hello"), false);
+                                                    context.getSource().sendFeedback(() -> Text.literal("To reload Alfred do /alfred reload"), false);
                                                     return 1;
                                                 })
                                         .then(

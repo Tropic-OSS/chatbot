@@ -69,7 +69,7 @@ public class Server extends WebSocketServer {
 
         Bot bot = Bot.getInstance();
 
-        bot.sendEmbedMessage(msg.getContent(), msg.getProfile(), msg.getOrigin());
+        bot.sendWebhook(msg.getContent(), msg.getProfile(), msg.getOrigin());
     }
 
     private void handleServerMessage(ServerMessage msg) {
