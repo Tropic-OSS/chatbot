@@ -1,8 +1,8 @@
-package com.tropicoss.alfred.socket;
+package com.tropicoss.alfred.socket.messaging;
 
 import net.minecraft.text.Text;
 
-public class StartingMessage extends WebsocketMessage {
+public class StartingMessage implements WebsocketMessage {
 
     public String origin;
     private final String type = "starting";

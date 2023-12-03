@@ -3,8 +3,7 @@ package com.tropicoss.alfred.callback;
 import com.google.gson.Gson;
 import com.tropicoss.alfred.bot.Bot;
 import com.tropicoss.alfred.config.Config;
-import com.tropicoss.alfred.socket.ChatMessage;
-import com.tropicoss.alfred.socket.WebsocketMessage;
+import com.tropicoss.alfred.socket.messaging.ChatMessage;
 import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.minecraft.network.message.MessageType;
 import net.minecraft.network.message.SignedMessage;
@@ -23,16 +22,14 @@ public class ServerMessageCallback implements ServerMessageEvents.ChatMessage, S
 
            String json = new Gson().toJson(msg);
 
-           Bot bot = Bot.getInstance();
-
            switch (Config.Generic.mode) {
                case SERVER -> {
-                   bot.sendWebhook(message.getContent().getString(), msg.getProfile(), Config.Generic.name);
+                   Bot.getInstance().sendWebhook(message.getContent().getString(), msg.getProfile(), Config.Generic.name);
 
                    SOCKET_SERVER.broadcast(json);
                }
 
-               case STANDALONE -> bot.sendWebhook(message.getContent().getString(), msg.getProfile(), Config.Generic.name);
+               case STANDALONE -> Bot.getInstance().sendWebhook(message.getContent().getString(), msg.getProfile(), Config.Generic.name);
 
                case CLIENT -> SOCKET_CLIENT.send(json);
            }

@@ -1,8 +1,9 @@
 package com.tropicoss.alfred.socket;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.tropicoss.alfred.config.Config;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.tropicoss.alfred.socket.messaging.*;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
@@ -19,32 +20,15 @@ public class Client extends WebSocketClient {
     @Override
     public void onOpen(ServerHandshake handshake) {
 
-        try {
-            LOGGER.info("Connected To Server");
-
-            ServerMessage msg = new ServerMessage("Connected to server", Config.Generic.name);
-
-            String json = new Gson().toJson(msg);
-
-            SOCKET_CLIENT.send(json);
-
-        } catch (Exception e) {
-            LOGGER.error("Error sending message: " + e.getMessage());
-        }
+        LOGGER.info("Connected To Server");
     }
 
     @Override
     public void onMessage(String message) {
 
-        try {
-            WebsocketMessage msg = new Gson().fromJson(message, WebsocketMessage.class);
+        MessageHandler messageHandler = new MessageHandler();
 
-            LOGGER.info(msg.toConsoleString());
-
-            MINECRAFT_SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(msg.toChatText(), false));
-        } catch (Exception e) {
-            LOGGER.error(e.getMessage());
-        }
+        messageHandler.handleMessage(message);
     }
 
     @Override

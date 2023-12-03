@@ -1,9 +1,9 @@
-package com.tropicoss.alfred.socket;
+package com.tropicoss.alfred.socket.messaging;
 
 import com.tropicoss.alfred.PlayerInfoFetcher;
 import net.minecraft.text.Text;
 
-    public class ChatMessage extends WebsocketMessage {
+    public class ChatMessage implements WebsocketMessage {
 
         public String origin;
         public String uuid;

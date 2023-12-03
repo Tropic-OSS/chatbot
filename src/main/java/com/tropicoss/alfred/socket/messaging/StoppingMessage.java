@@ -1,8 +1,8 @@
-package com.tropicoss.alfred.socket;
+package com.tropicoss.alfred.socket.messaging;
 
 import net.minecraft.text.Text;
 
-public class StoppingMessage extends WebsocketMessage {
+public class StoppingMessage implements WebsocketMessage {
 
     public String server;
 

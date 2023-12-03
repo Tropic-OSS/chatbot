@@ -1,8 +1,8 @@
 package com.tropicoss.alfred;
 
-import com.tropicoss.alfred.callback.ServerLifecycleCallback;
-import com.tropicoss.alfred.callback.ServerMessageCallback;
-import com.tropicoss.alfred.callback.ServerPlayerConnectionCallback;
+import com.tropicoss.alfred.callback.*;
+import com.tropicoss.alfred.event.EntityDeathEvents;
+import com.tropicoss.alfred.event.PlayerDeathEvents;
 import com.tropicoss.alfred.socket.Client;
 import com.tropicoss.alfred.socket.Server;
 import net.fabricmc.api.DedicatedServerModInitializer;
@@ -33,6 +33,10 @@ public class Alfred implements DedicatedServerModInitializer {
 
             ServerMessageCallback serverMessageCallback = new ServerMessageCallback();
 
+            AdvancementCallback advancementCallback = new AdvancementCallback();
+
+            EntityDeathCallback entityDeathCallback = new EntityDeathCallback();
+
 
             ServerLifecycleEvents.SERVER_STARTING.register(serverLifecycleCallback);
 
@@ -49,6 +53,12 @@ public class Alfred implements DedicatedServerModInitializer {
 
 
             ServerMessageEvents.CHAT_MESSAGE.register(serverMessageCallback);
+
+            AdvancementCallback.EVENT.register(advancementCallback);
+
+            PlayerDeathEvents.EVENT.register(entityDeathCallback);
+
+            EntityDeathEvents.EVENT.register(entityDeathCallback);
 
             LOGGER.info("Alfred Has Started");
         } catch (Exception e) {

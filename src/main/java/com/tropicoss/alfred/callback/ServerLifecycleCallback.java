@@ -6,6 +6,10 @@ import com.tropicoss.alfred.config.Config;
 import com.tropicoss.alfred.config.GenericConfig;
 import com.tropicoss.alfred.minecraft.Commands;
 import com.tropicoss.alfred.socket.*;
+import com.tropicoss.alfred.socket.messaging.StartedMessage;
+import com.tropicoss.alfred.socket.messaging.StartingMessage;
+import com.tropicoss.alfred.socket.messaging.StoppedMessage;
+import com.tropicoss.alfred.socket.messaging.StoppingMessage;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.server.MinecraftServer;
 
@@ -101,27 +105,18 @@ public class ServerLifecycleCallback implements ServerLifecycleEvents.ServerStar
     public void onServerStopping(MinecraftServer server) {
 
         try {
+            StoppingMessage message = new StoppingMessage(Config.Generic.name);
+
+            String json = new Gson().toJson(message);
+
             switch (Config.Generic.mode) {
                 case SERVER -> {
-                    try {
-                        Bot.getInstance().sendServerStoppingMessage(Config.Generic.name);
+                    Bot.getInstance().sendServerStoppingMessage(Config.Generic.name);
 
-                        Bot.getInstance().shutdown();
-
-                        SOCKET_SERVER.stop(100);
-                    } catch (InterruptedException e) {
-                        LOGGER.error("Error closing server: " + e.getMessage());
-                    }
+                    SOCKET_SERVER.broadcast(json);
                 }
 
-                case CLIENT -> {
-
-                   StoppingMessage message = new StoppingMessage(Config.Generic.name);
-
-                    String json = new Gson().toJson(message);
-
-                    SOCKET_CLIENT.send(json);
-                }
+                case CLIENT -> SOCKET_CLIENT.send(json);
 
                 case STANDALONE -> Bot.getInstance().sendServerStoppingMessage(Config.Generic.name);
             }
@@ -132,20 +127,43 @@ public class ServerLifecycleCallback implements ServerLifecycleEvents.ServerStar
 
     @Override
     public void onServerStopped(MinecraftServer server) {
-        if (Config.Generic.mode.equals(GenericConfig.Mode.CLIENT)) {
-            try {
-               StoppedMessage message = new StoppedMessage(Config.Generic.name);
+        StoppedMessage message = new StoppedMessage(Config.Generic.name);
 
-                String json = new Gson().toJson(message);
+        String json = new Gson().toJson(message);
 
-                SOCKET_CLIENT.send(json);
+        try {
+            switch (Config.Generic.mode) {
+                case SERVER -> {
+                    try {
+                        Bot.getInstance().sendServerStoppedMessage(Config.Generic.name);
 
-                SOCKET_CLIENT.closeBlocking();
-            } catch (InterruptedException e) {
-                LOGGER.error("Error closing client: " + e.getMessage());
-            } catch (Exception e) {
-                LOGGER.error(e.getMessage());
+                        Bot.getInstance().shutdown();
+
+                        SOCKET_SERVER.broadcast(json);
+
+                        SOCKET_SERVER.stop(100);
+                    } catch (InterruptedException e) {
+                        LOGGER.error("Error closing server: " + e.getMessage());
+                    }
+                }
+
+                case CLIENT -> {
+
+                    SOCKET_CLIENT.send(json);
+
+                    SOCKET_CLIENT.closeBlocking();
+                }
+
+                case STANDALONE -> {
+                    Bot.getInstance().sendServerStoppedMessage(Config.Generic.name);
+
+                    Bot.getInstance().shutdown();
+                }
             }
+        }catch (InterruptedException e) {
+            LOGGER.error("Error closing client: " + e.getMessage());
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
         }
     }
 }

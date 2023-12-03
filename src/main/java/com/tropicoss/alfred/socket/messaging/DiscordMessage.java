@@ -1,8 +1,8 @@
-package com.tropicoss.alfred.socket;
+package com.tropicoss.alfred.socket.messaging;
 
 import net.minecraft.text.Text;
 
-public class DiscordMessage extends WebsocketMessage {
+public class DiscordMessage implements WebsocketMessage {
 
     public String message;
 

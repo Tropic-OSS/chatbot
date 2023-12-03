@@ -90,23 +90,6 @@ public class Bot {
         BOT.awaitShutdown();
     }
 
-    public void sendEmbedMessage(String message, String serverName) {
-
-        if (CHANNEL == null) {
-            Alfred.LOGGER.error("Chat channel not found. Please check your config file.");
-            return;
-        }
-
-        EmbedBuilder builder = new EmbedBuilder()
-                .setDescription(message)
-                .setFooter(serverName, iconUrl)
-                .setTimestamp(Instant.now())
-                .setAuthor(serverName)
-                .setColor(39129);
-
-        CHANNEL.sendMessageEmbeds(builder.build()).queue();
-    }
-
     public void sendWebhook(String message, PlayerInfoFetcher.Profile profile, String serverName) {
         try {
             JsonObject body = new JsonObject();
@@ -206,6 +189,37 @@ public class Bot {
                         .setTimestamp(Instant.now())
                         .setFooter(serverName, iconUrl)
                         .setColor(Color.orange)
+                        .build()
+        ).queue();
+    }
+
+    public void sendAchievementMessage(PlayerInfoFetcher.Profile profile, String serverName, String title, String description) {
+        String nameMCProfile = String.format("https://namemc.com/profile/%s", profile.data.player.username);
+
+        CHANNEL.sendMessageEmbeds(
+                new EmbedBuilder()
+                        .setAuthor(profile.data.player.username, nameMCProfile, profile.data.player.avatar)
+                        .setTitle("Got An Advancement")
+                        .addField("Advancement", title, false)
+                        .addField("Description", description, false)
+                        .setTimestamp(Instant.now())
+                        .setFooter(serverName, iconUrl)
+                        .setColor(Color.BLUE)
+                        .build()
+        ).queue();
+    }
+
+    public void sendDeathMessage(String origin, String message, String coordinates) {
+
+        String description = String.format("%s\n%s", message, coordinates);
+
+        CHANNEL.sendMessageEmbeds(
+                new EmbedBuilder()
+                        .setAuthor(origin, null ,iconUrl)
+                        .setDescription(description)
+                        .setTimestamp(Instant.now())
+                        .setFooter(origin, iconUrl)
+                        .setColor(Color.BLUE)
                         .build()
         ).queue();
     }
