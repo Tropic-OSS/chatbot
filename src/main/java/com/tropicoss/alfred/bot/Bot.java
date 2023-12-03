@@ -27,14 +27,6 @@ public class Bot {
 
     private static final Bot instance;
 
-    private final JDA BOT;
-
-    private final TextChannel CHANNEL;
-
-    private Webhook WEBHOOK = null;
-
-    private final String iconUrl = "https://cdn2.iconfinder.com/data/icons/whcompare-isometric-web-hosting-servers/50/value-server-512.png";
-
     static {
         try {
             instance = new Bot();
@@ -43,6 +35,10 @@ public class Bot {
         }
     }
 
+    private final JDA BOT;
+    private final TextChannel CHANNEL;
+    private final String iconUrl = "https://cdn2.iconfinder.com/data/icons/whcompare-isometric-web-hosting-servers/50/value-server-512.png";
+    private Webhook WEBHOOK = null;
 
 
     private Bot() throws InterruptedException {
@@ -63,7 +59,7 @@ public class Bot {
                 }
             }
 
-            if(WEBHOOK == null) {
+            if (WEBHOOK == null) {
                 WEBHOOK = CHANNEL.createWebhook("Alfred").complete();
             }
 
@@ -102,11 +98,11 @@ public class Bot {
         }
 
         EmbedBuilder builder = new EmbedBuilder()
-                        .setDescription(message)
-                        .setFooter(serverName, iconUrl)
-                        .setTimestamp(Instant.now())
-                                .setAuthor(serverName)
-                                .setColor(39129);
+                .setDescription(message)
+                .setFooter(serverName, iconUrl)
+                .setTimestamp(Instant.now())
+                .setAuthor(serverName)
+                .setColor(39129);
 
         CHANNEL.sendMessageEmbeds(builder.build()).queue();
     }
@@ -126,7 +122,7 @@ public class Bot {
                     .build();
 
             HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
-        }  catch (IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             LOGGER.error(e.getMessage());
         }
     }
@@ -135,7 +131,7 @@ public class Bot {
         CHANNEL
                 .sendMessageEmbeds(
                         new EmbedBuilder()
-                                .setAuthor(serverName,null, iconUrl )
+                                .setAuthor(serverName, null, iconUrl)
                                 .setDescription("Server is starting...")
                                 .setTimestamp(Instant.now())
                                 .setFooter(serverName, iconUrl)
@@ -150,7 +146,7 @@ public class Bot {
         CHANNEL
                 .sendMessageEmbeds(
                         new EmbedBuilder()
-                                .setAuthor(serverName,null, iconUrl )
+                                .setAuthor(serverName, null, iconUrl)
                                 .setDescription(description)
                                 .setTimestamp(Instant.now())
                                 .setFooter(serverName, iconUrl)
@@ -163,7 +159,7 @@ public class Bot {
         CHANNEL
                 .sendMessageEmbeds(
                         new EmbedBuilder()
-                                .setAuthor(serverName,null, "https://cdn2.iconfinder.com/data/icons/whcompare-isometric-web-hosting-servers/50/value-server-512.png" )
+                                .setAuthor(serverName, null, "https://cdn2.iconfinder.com/data/icons/whcompare-isometric-web-hosting-servers/50/value-server-512.png")
                                 .setTitle("Server is stopping...")
                                 .setTimestamp(Instant.now())
                                 .setFooter(serverName, iconUrl)
@@ -176,7 +172,7 @@ public class Bot {
         CHANNEL
                 .sendMessageEmbeds(
                         new EmbedBuilder()
-                                .setAuthor(serverName,null, "https://cdn2.iconfinder.com/data/icons/whcompare-isometric-web-hosting-servers/50/value-server-512.png" )
+                                .setAuthor(serverName, null, "https://cdn2.iconfinder.com/data/icons/whcompare-isometric-web-hosting-servers/50/value-server-512.png")
                                 .setTitle("Server stopped!")
                                 .setTimestamp(Instant.now())
                                 .setFooter(serverName, iconUrl)
@@ -191,7 +187,7 @@ public class Bot {
 
         CHANNEL.sendMessageEmbeds(
                 new EmbedBuilder()
-                        .setAuthor(profile.data.player.username, nameMCProfile, profile.data.player.avatar )
+                        .setAuthor(profile.data.player.username, nameMCProfile, profile.data.player.avatar)
                         .setTitle("Joined the server")
                         .setTimestamp(Instant.now())
                         .setFooter(serverName, iconUrl)
@@ -205,7 +201,7 @@ public class Bot {
 
         CHANNEL.sendMessageEmbeds(
                 new EmbedBuilder()
-                        .setAuthor(profile.data.player.username, nameMCProfile, profile.data.player.avatar )
+                        .setAuthor(profile.data.player.username, nameMCProfile, profile.data.player.avatar)
                         .setTitle("Left the server")
                         .setTimestamp(Instant.now())
                         .setFooter(serverName, iconUrl)

@@ -13,9 +13,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import java.util.Objects;
 
-import static com.tropicoss.alfred.Alfred.MINECRAFT_SERVER;
-import static com.tropicoss.alfred.Alfred.SOCKET_SERVER;
-import static com.tropicoss.alfred.Alfred.LOGGER;
+import static com.tropicoss.alfred.Alfred.*;
 
 public class Listeners extends ListenerAdapter {
 

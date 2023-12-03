@@ -27,13 +27,13 @@ public class ServerMessageCallback implements ServerMessageEvents.ChatMessage, S
     @Override
     public void onChatMessage(SignedMessage message, ServerPlayerEntity sender, MessageType.Parameters params) {
 
-        ChatMessage msg = new ChatMessage(Config.Generic.name, sender.getUuid().toString(),  message.getContent().getString());
+        ChatMessage msg = new ChatMessage(Config.Generic.name, sender.getUuid().toString(), message.getContent().getString());
 
         String json = gson.toJson(msg);
 
         Bot bot = Bot.getInstance();
 
-        switch(Config.Generic.mode) {
+        switch (Config.Generic.mode) {
             case SERVER -> {
                 bot.sendWebhook(message.getContent().getString(), msg.getProfile(), Config.Generic.name);
 
@@ -53,7 +53,7 @@ public class ServerMessageCallback implements ServerMessageEvents.ChatMessage, S
         switch (typeKey) {
             case "chat.type.emote" -> handleMeCommand(message, source, params);
 
-            case "chat.type.announcement" ->handleSayCommand(message, source, params);
+            case "chat.type.announcement" -> handleSayCommand(message, source, params);
         }
     }
 

@@ -2,7 +2,6 @@ package com.tropicoss.alfred.callback;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.tropicoss.alfred.Alfred;
 import com.tropicoss.alfred.bot.Bot;
 import com.tropicoss.alfred.config.Config;
 import com.tropicoss.alfred.config.GenericConfig;
@@ -23,7 +22,7 @@ import static com.tropicoss.alfred.Alfred.*;
 public class ServerLifecycleCallback implements ServerLifecycleEvents.ServerStarting,
         ServerLifecycleEvents.ServerStarted,
         ServerLifecycleEvents.ServerStopping,
-        ServerLifecycleEvents.ServerStopped{
+        ServerLifecycleEvents.ServerStopped {
 
     private final Gson gson = new GsonBuilder()
             .registerTypeAdapter(WebsocketMessage.class, new WebsocketMessageTypeAdapter())
@@ -37,7 +36,7 @@ public class ServerLifecycleCallback implements ServerLifecycleEvents.ServerStar
 
         long uptime = rb.getUptime();
 
-        switch(Config.Generic.mode) {
+        switch (Config.Generic.mode) {
             case SERVER, STANDALONE -> Bot.getInstance().sendServerStartedMessage(Config.Generic.name, uptime);
 
             case CLIENT -> {
@@ -55,7 +54,7 @@ public class ServerLifecycleCallback implements ServerLifecycleEvents.ServerStar
 
     @Override
     public void onServerStarting(MinecraftServer server) {
-        switch(Config.Generic.mode) {
+        switch (Config.Generic.mode) {
             case SERVER -> {
                 Bot.getInstance().sendServerStartingMessage(Config.Generic.name);
 
@@ -129,7 +128,7 @@ public class ServerLifecycleCallback implements ServerLifecycleEvents.ServerStar
 
     @Override
     public void onServerStopped(MinecraftServer server) {
-        if(Config.Generic.mode.equals(GenericConfig.Mode.CLIENT)) {
+        if (Config.Generic.mode.equals(GenericConfig.Mode.CLIENT)) {
             try {
                 StoppedMessage message = new StoppedMessage(Config.Generic.name);
 
