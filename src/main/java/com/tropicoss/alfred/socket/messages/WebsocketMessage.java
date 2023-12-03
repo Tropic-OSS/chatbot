@@ -3,15 +3,15 @@ package com.tropicoss.alfred.socket.messages;
 import net.minecraft.text.Text;
 
 public interface WebsocketMessage {
-     default String getMessageType() {
+    default String getMessageType() {
         return null;
     }
 
-     default String toConsoleString() {
+    default String toConsoleString() {
         return null;
     }
 
-     default Text toChatText() {
+    default Text toChatText() {
         return null;
     }
 }

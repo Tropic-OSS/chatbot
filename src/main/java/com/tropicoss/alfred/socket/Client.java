@@ -2,9 +2,11 @@ package com.tropicoss.alfred.socket;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.tropicoss.alfred.Alfred;
 import com.tropicoss.alfred.config.Config;
-import com.tropicoss.alfred.socket.messages.*;
+import com.tropicoss.alfred.socket.messages.InterfaceAdapter;
+import com.tropicoss.alfred.socket.messages.ServerMessage;
+import com.tropicoss.alfred.socket.messages.WebsocketMessage;
+import com.tropicoss.alfred.socket.messages.WebsocketMessageTypeAdapter;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
@@ -15,7 +17,8 @@ import static com.tropicoss.alfred.Alfred.*;
 public class Client extends WebSocketClient {
 
     private final Gson gson = new GsonBuilder()
-            .registerTypeAdapterFactory(new WebsocketMessageTypeAdapterFactory())
+            .registerTypeAdapter(WebsocketMessage.class, new WebsocketMessageTypeAdapter())
+            .registerTypeHierarchyAdapter(WebsocketMessage.class, new InterfaceAdapter<>())
             .create();
 
     public Client(URI serverUri) {
