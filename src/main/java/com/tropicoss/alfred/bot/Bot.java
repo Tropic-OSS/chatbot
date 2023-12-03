@@ -145,7 +145,7 @@ public class Bot {
     }
 
     public void sendServerStartedMessage(String serverName, Long uptime) {
-        String description = String.format("Server started in %sS 🕛", uptime);
+        String description = String.format("Server started in %sS 🕛", uptime / 1000);
 
         CHANNEL
                 .sendMessageEmbeds(

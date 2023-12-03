@@ -13,9 +13,6 @@ import net.minecraft.server.MinecraftServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetSocketAddress;
-import java.net.URI;
-
 public class Alfred implements DedicatedServerModInitializer {
 
     public static final Logger LOGGER = LoggerFactory.getLogger("Alfred");

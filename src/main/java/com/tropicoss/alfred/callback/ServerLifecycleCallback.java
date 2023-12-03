@@ -1,11 +1,15 @@
 package com.tropicoss.alfred.callback;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.tropicoss.alfred.Alfred;
 import com.tropicoss.alfred.bot.Bot;
 import com.tropicoss.alfred.config.Config;
+import com.tropicoss.alfred.config.GenericConfig;
 import com.tropicoss.alfred.minecraft.Commands;
 import com.tropicoss.alfred.socket.Client;
 import com.tropicoss.alfred.socket.Server;
+import com.tropicoss.alfred.socket.messages.*;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.server.MinecraftServer;
 
@@ -14,22 +18,39 @@ import java.lang.management.RuntimeMXBean;
 import java.net.InetSocketAddress;
 import java.net.URI;
 
-import static com.tropicoss.alfred.Alfred.SOCKET_SERVER;
-import static com.tropicoss.alfred.Alfred.SOCKET_CLIENT;
-import static com.tropicoss.alfred.Alfred.LOGGER;
+import static com.tropicoss.alfred.Alfred.*;
 
 public class ServerLifecycleCallback implements ServerLifecycleEvents.ServerStarting,
         ServerLifecycleEvents.ServerStarted,
         ServerLifecycleEvents.ServerStopping,
         ServerLifecycleEvents.ServerStopped{
 
+    private final Gson gson = new GsonBuilder()
+            .registerTypeAdapter(WebsocketMessage.class, new WebsocketMessageTypeAdapter())
+            .registerTypeHierarchyAdapter(WebsocketMessage.class, new InterfaceAdapter<>())
+            .create();
+
     @Override
     public void onServerStarted(MinecraftServer server) {
+
         RuntimeMXBean rb = ManagementFactory.getRuntimeMXBean();
 
         long uptime = rb.getUptime();
 
-        Bot.getInstance().sendServerStartedMessage(Config.Generic.name, uptime);
+        switch(Config.Generic.mode) {
+            case SERVER, STANDALONE -> Bot.getInstance().sendServerStartedMessage(Config.Generic.name, uptime);
+
+            case CLIENT -> {
+
+                StartedMessage message = new StartedMessage(Config.Generic.name, uptime);
+
+                String json = gson.toJson(message);
+
+                SOCKET_CLIENT.send(json);
+
+                LOGGER.info("Running in Client Mode");
+            }
+        }
     }
 
     @Override
@@ -42,8 +63,11 @@ public class ServerLifecycleCallback implements ServerLifecycleEvents.ServerStar
 
                 SOCKET_SERVER.start();
 
+                MINECRAFT_SERVER = server;
+
                 LOGGER.info("Running in Server Mode");
             }
+
             case CLIENT -> {
                 Commands.register();
 
@@ -57,8 +81,15 @@ public class ServerLifecycleCallback implements ServerLifecycleEvents.ServerStar
                     LOGGER.error("There was an error connecting to Alfred Server is it running ?");
                 }
 
+                StartingMessage message = new StartingMessage(Config.Generic.name);
+
+                String json = gson.toJson(message);
+
+                SOCKET_CLIENT.send(json);
+
                 LOGGER.info("Running in Client Mode");
             }
+
             case STANDALONE -> {
                 Bot.getInstance().sendServerStartingMessage(Config.Generic.name);
 
@@ -76,18 +107,20 @@ public class ServerLifecycleCallback implements ServerLifecycleEvents.ServerStar
                     Bot.getInstance().sendServerStoppingMessage(Config.Generic.name);
 
                     Bot.getInstance().shutdown();
+
                     SOCKET_SERVER.stop(100);
                 } catch (InterruptedException e) {
-                    Alfred.LOGGER.error("Error closing server: " + e.getMessage());
+                    LOGGER.error("Error closing server: " + e.getMessage());
                 }
             }
 
             case CLIENT -> {
-                try {
-                    Alfred.SOCKET_CLIENT.closeBlocking();
-                } catch (InterruptedException e) {
-                    Alfred.LOGGER.error("Error closing client: " + e.getMessage());
-                }
+
+                StoppingMessage message = new StoppingMessage(Config.Generic.name);
+
+                String json = gson.toJson(message);
+
+                SOCKET_CLIENT.send(json);
             }
 
             case STANDALONE -> Bot.getInstance().sendServerStoppingMessage(Config.Generic.name);
@@ -96,6 +129,18 @@ public class ServerLifecycleCallback implements ServerLifecycleEvents.ServerStar
 
     @Override
     public void onServerStopped(MinecraftServer server) {
+        if(Config.Generic.mode.equals(GenericConfig.Mode.CLIENT)) {
+            try {
+                StoppedMessage message = new StoppedMessage(Config.Generic.name);
 
+                String json = gson.toJson(message);
+
+                SOCKET_CLIENT.send(json);
+
+                SOCKET_CLIENT.closeBlocking();
+            } catch (InterruptedException e) {
+                LOGGER.error("Error closing client: " + e.getMessage());
+            }
+        }
     }
 }

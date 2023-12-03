@@ -1,9 +1,13 @@
 package com.tropicoss.alfred.callback;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.tropicoss.alfred.bot.Bot;
 import com.tropicoss.alfred.config.Config;
 import com.tropicoss.alfred.socket.messages.ChatMessage;
+import com.tropicoss.alfred.socket.messages.InterfaceAdapter;
+import com.tropicoss.alfred.socket.messages.WebsocketMessage;
+import com.tropicoss.alfred.socket.messages.WebsocketMessageTypeAdapter;
 import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.minecraft.network.message.MessageType;
 import net.minecraft.network.message.SignedMessage;
@@ -15,7 +19,11 @@ import static com.tropicoss.alfred.Alfred.SOCKET_SERVER;
 
 public class ServerMessageCallback implements ServerMessageEvents.ChatMessage, ServerMessageEvents.CommandMessage {
 
-    private final Gson gson = new Gson();
+    private final Gson gson = new GsonBuilder()
+            .registerTypeAdapter(WebsocketMessage.class, new WebsocketMessageTypeAdapter())
+            .registerTypeHierarchyAdapter(WebsocketMessage.class, new InterfaceAdapter<>())
+            .create();
+
     @Override
     public void onChatMessage(SignedMessage message, ServerPlayerEntity sender, MessageType.Parameters params) {
 

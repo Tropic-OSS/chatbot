@@ -1,9 +1,13 @@
 package com.tropicoss.alfred.bot;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.tropicoss.alfred.config.Config;
 import com.tropicoss.alfred.config.GenericConfig;
 import com.tropicoss.alfred.socket.messages.DiscordMessage;
+import com.tropicoss.alfred.socket.messages.InterfaceAdapter;
+import com.tropicoss.alfred.socket.messages.WebsocketMessage;
+import com.tropicoss.alfred.socket.messages.WebsocketMessageTypeAdapter;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -14,6 +18,12 @@ import static com.tropicoss.alfred.Alfred.SOCKET_SERVER;
 import static com.tropicoss.alfred.Alfred.LOGGER;
 
 public class Listeners extends ListenerAdapter {
+
+    private static final Gson gson = new GsonBuilder()
+            .registerTypeAdapter(WebsocketMessage.class, new WebsocketMessageTypeAdapter())
+            .registerTypeHierarchyAdapter(WebsocketMessage.class, new InterfaceAdapter<>())
+            .create();
+
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         if (event.getAuthor().isBot()) return;
@@ -30,7 +40,7 @@ public class Listeners extends ListenerAdapter {
         // Send message to all players. Broadcast adds the colors to the console sadly.
         MINECRAFT_SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(msg.toChatText(), false));
 
-        String json = new Gson().toJson(msg);
+        String json = gson.toJson(msg);
 
         if (Config.Generic.mode.equals(GenericConfig.Mode.SERVER)) {
             SOCKET_SERVER.broadcast(json);
