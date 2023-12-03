@@ -10,8 +10,7 @@ import org.java_websocket.handshake.ServerHandshake;
 
 import java.net.URI;
 
-import static com.tropicoss.alfred.Alfred.LOGGER;
-import static com.tropicoss.alfred.Alfred.MINECRAFT_SERVER;
+import static com.tropicoss.alfred.Alfred.*;
 
 public class Client extends WebSocketClient {
 
@@ -33,10 +32,10 @@ public class Client extends WebSocketClient {
 
             String json = gson.toJson(msg, ServerMessage.class);
 
-            Alfred.SOCKET_CLIENT.send(json);
+            SOCKET_CLIENT.send(json);
 
         } catch (Exception e) {
-            Alfred.LOGGER.error("Error sending message: " + e.getMessage());
+            LOGGER.error("Error sending message: " + e.getMessage());
         }
     }
 
@@ -44,39 +43,6 @@ public class Client extends WebSocketClient {
     public void onMessage(String message) {
 
         WebsocketMessage msg = gson.fromJson(message, WebsocketMessage.class);
-
-        String type = msg.getMessageType();
-
-        switch (type) {
-            case "discord":
-                handleDiscordMessage((DiscordMessage) msg);
-                break;
-            case "chat":
-                handleChatMessage((ChatMessage) msg);
-                break;
-            case "server":
-                handleServerMessage((ServerMessage) msg);
-                break;
-            default:
-                Alfred.LOGGER.error("Unknown message type: " + type);
-                break;
-        }
-    }
-
-    private void handleDiscordMessage(DiscordMessage msg) {
-        LOGGER.info(msg.toConsoleString());
-
-        MINECRAFT_SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(msg.toChatText(), false));
-    }
-
-    private void handleChatMessage(ChatMessage msg) {
-
-        LOGGER.info(msg.toConsoleString());
-
-        MINECRAFT_SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(msg.toChatText(), false));
-    }
-
-    private void handleServerMessage(ServerMessage msg) {
 
         LOGGER.info(msg.toConsoleString());
 
