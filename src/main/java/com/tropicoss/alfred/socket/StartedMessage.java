@@ -1,11 +1,18 @@
-package com.tropicoss.alfred.socket.messages;
+package com.tropicoss.alfred.socket;
 
 import net.minecraft.text.Text;
 
-public record StartedMessage(String origin, Long uptime) implements WebsocketMessage {
-    @Override
-    public String getMessageType() {
-        return "started";
+public class StartedMessage extends WebsocketMessage {
+
+    public String origin;
+
+    public Long uptime;
+
+    private final String type = "started";
+
+    public StartedMessage(String origin, Long uptime) {
+        this.origin = origin;
+        this.uptime = uptime;
     }
 
     @Override

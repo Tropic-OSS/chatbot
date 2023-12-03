@@ -1,11 +1,16 @@
-package com.tropicoss.alfred.socket.messages;
+package com.tropicoss.alfred.socket;
 
 import net.minecraft.text.Text;
 
-public record StoppingMessage(String server) implements WebsocketMessage {
-    @Override
-    public String getMessageType() {
-        return "stopping";
+public class StoppingMessage extends WebsocketMessage {
+
+    public String server;
+
+    private final String type = "stopping";
+
+
+    public StoppingMessage(String server) {
+        this.server = server;
     }
 
     @Override

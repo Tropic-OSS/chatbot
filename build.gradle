@@ -35,9 +35,10 @@ dependencies {
     include("org.jetbrains.kotlin:kotlin-stdlib:1.6.20")
     include("org.apache.commons:commons-collections4:4.4")
     include("com.neovisionaries:nv-websocket-client:2.14")
-    include("com.fasterxml.jackson.core:jackson-core:2.14.1")
-    include("com.fasterxml.jackson.core:jackson-databind:2.14.1")
-    include("com.fasterxml.jackson.core:jackson-annotations:2.14.1")
+
+    include( implementation "com.fasterxml.jackson.core:jackson-core:2.14.1")
+    include( implementation "com.fasterxml.jackson.core:jackson-databind:2.14.1")
+    include( implementation "com.fasterxml.jackson.core:jackson-annotations:2.14.1")
 }
 
 processResources {
