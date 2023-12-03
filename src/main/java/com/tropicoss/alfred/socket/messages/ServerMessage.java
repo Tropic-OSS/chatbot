@@ -2,24 +2,7 @@ package com.tropicoss.alfred.socket.messages;
 
 import net.minecraft.text.Text;
 
-public class ServerMessage extends WebsocketMessage {
-
-    private final String origin;
-
-    private final String message;
-
-    public ServerMessage(String message, String origin) {
-        this.origin = origin;
-        this.message = message;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public String getOrigin() {
-        return origin;
-    }
+public record ServerMessage(String message, String origin) implements WebsocketMessage {
 
     @Override
     public String getMessageType() {
@@ -28,11 +11,11 @@ public class ServerMessage extends WebsocketMessage {
 
     @Override
     public String toConsoleString() {
-        return String.format("[%s] Server: %s", this.getOrigin(), this.getMessage());
+        return String.format("[%s] Server: %s", this.origin(), this.message());
     }
 
     @Override
     public Text toChatText() {
-        return Text.of(String.format("§9[%s] §bServer: §f%s", this.getOrigin(), this.getMessage()));
+        return Text.of(String.format("§9[%s] §bServer: §f%s", this.origin(), this.message()));
     }
 }

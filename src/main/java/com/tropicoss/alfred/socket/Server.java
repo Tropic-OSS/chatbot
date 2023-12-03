@@ -2,7 +2,6 @@ package com.tropicoss.alfred.socket;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.tropicoss.alfred.Alfred;
 import com.tropicoss.alfred.bot.Bot;
 import com.tropicoss.alfred.config.Config;
 import com.tropicoss.alfred.socket.messages.WebsocketMessage;
@@ -14,6 +13,9 @@ import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 
 import java.net.InetSocketAddress;
+
+import static com.tropicoss.alfred.Alfred.LOGGER;
+import static com.tropicoss.alfred.Alfred.MINECRAFT_SERVER;
 
 public class Server extends WebSocketServer {
 
@@ -27,13 +29,13 @@ public class Server extends WebSocketServer {
 
     @Override
     public void onOpen(WebSocket conn, ClientHandshake handshake) {
-        Alfred.LOGGER.info(
+        LOGGER.info(
                 "New connection from " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
     }
 
     @Override
     public void onClose(WebSocket conn, int code, String reason, boolean remote) {
-        Alfred.LOGGER.info(
+        LOGGER.info(
                 "Closed connection to " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
     }
 
@@ -52,16 +54,16 @@ public class Server extends WebSocketServer {
                 handleChatMessage((ChatMessage) msg);
                 break;
             default:
-                Alfred.LOGGER.error("Invalid message");
+                LOGGER.error("Invalid message");
                 break;
         }
     }
 
     private void handleChatMessage(ChatMessage msg) {
 
-        Alfred.LOGGER.info(msg.toConsoleString());
+        LOGGER.info(msg.toConsoleString());
 
-        Alfred.SERVER
+        MINECRAFT_SERVER
                 .getPlayerManager()
                 .getPlayerList()
                 .forEach(
@@ -69,13 +71,13 @@ public class Server extends WebSocketServer {
 
         Bot bot = Bot.getInstance();
 
-        bot.sendWebhook(msg.getContent(), msg.getProfile(), msg.getOrigin());
+        bot.sendWebhook(msg.content(), msg.getProfile(), msg.origin());
     }
 
     private void handleServerMessage(ServerMessage msg) {
-        Alfred.LOGGER.info(msg.toConsoleString());
+        LOGGER.info(msg.toConsoleString());
 
-        Alfred.SERVER
+        MINECRAFT_SERVER
                 .getPlayerManager()
                 .getPlayerList()
                 .forEach(
@@ -83,17 +85,17 @@ public class Server extends WebSocketServer {
 
         Bot bot = Bot.getInstance();
 
-        bot.sendEmbedMessage(msg.getMessage(), null, msg.getOrigin());
+        bot.sendEmbedMessage(msg.message(), msg.origin());
     }
 
     @Override
     public void onError(WebSocket conn, Exception ex) {
-        Alfred.LOGGER.error("Error from " + conn.getRemoteSocketAddress().getAddress().getHostAddress(), ex);
+        LOGGER.error("Error from " + conn.getRemoteSocketAddress().getAddress().getHostAddress(), ex);
     }
 
     @Override
     public void onStart() {
-        Alfred.LOGGER.info("Socket Server Started");
-        Alfred.LOGGER.info("Listening on port " + Config.WebSocket.port);
+        LOGGER.info("Socket Server Started");
+        LOGGER.info("Listening on port " + Config.WebSocket.port);
     }
 }

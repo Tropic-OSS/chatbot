@@ -10,6 +10,9 @@ import org.java_websocket.handshake.ServerHandshake;
 
 import java.net.URI;
 
+import static com.tropicoss.alfred.Alfred.LOGGER;
+import static com.tropicoss.alfred.Alfred.MINECRAFT_SERVER;
+
 public class Client extends WebSocketClient {
 
     private final Gson gson = new GsonBuilder()
@@ -24,7 +27,7 @@ public class Client extends WebSocketClient {
     public void onOpen(ServerHandshake handshake) {
 
         try {
-            Alfred.LOGGER.info("Connected To Server");
+            LOGGER.info("Connected To Server");
 
             ServerMessage msg = new ServerMessage("Connected to server", Config.Generic.name);
 
@@ -61,33 +64,33 @@ public class Client extends WebSocketClient {
     }
 
     private void handleDiscordMessage(DiscordMessage msg) {
-        Alfred.LOGGER.info(msg.toConsoleString());
+        LOGGER.info(msg.toConsoleString());
 
-        Alfred.SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(msg.toChatText(), false));
+        MINECRAFT_SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(msg.toChatText(), false));
     }
 
     private void handleChatMessage(ChatMessage msg) {
 
-        Alfred.LOGGER.info(msg.toConsoleString());
+        LOGGER.info(msg.toConsoleString());
 
-        Alfred.SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(msg.toChatText(), false));
+        MINECRAFT_SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(msg.toChatText(), false));
     }
 
     private void handleServerMessage(ServerMessage msg) {
 
-        Alfred.LOGGER.info(msg.toConsoleString());
+        LOGGER.info(msg.toConsoleString());
 
-        Alfred.SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(msg.toChatText(), false));
+        MINECRAFT_SERVER.getPlayerManager().getPlayerList().forEach(player -> player.sendMessage(msg.toChatText(), false));
     }
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
-        Alfred.LOGGER.info("Disconnected From Server");
+        LOGGER.info("Disconnected From Server");
     }
 
     @Override
     public void onError(Exception ex) {
-        Alfred.LOGGER.error("Error from " + this.getURI().getHost(), ex);
+        LOGGER.error("Error from " + this.getURI().getHost(), ex);
     }
 
     public void reload() {
@@ -95,7 +98,7 @@ public class Client extends WebSocketClient {
             closeBlocking();
             reconnect();
         } catch (InterruptedException e) {
-            Alfred.LOGGER.error("Error reloading connection: " + e.getMessage());
+            LOGGER.error("Error reloading connection: " + e.getMessage());
         }
     }
 }

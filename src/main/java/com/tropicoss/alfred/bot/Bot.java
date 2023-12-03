@@ -12,8 +12,8 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
-import org.jetbrains.annotations.Nullable;
 
+import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -27,6 +27,14 @@ public class Bot {
 
     private static final Bot instance;
 
+    private final JDA BOT;
+
+    private final TextChannel CHANNEL;
+
+    private Webhook WEBHOOK = null;
+
+    private final String iconUrl = "https://cdn2.iconfinder.com/data/icons/whcompare-isometric-web-hosting-servers/50/value-server-512.png";
+
     static {
         try {
             instance = new Bot();
@@ -35,11 +43,7 @@ public class Bot {
         }
     }
 
-    private final JDA BOT;
 
-    private final TextChannel CHANNEL;
-
-    private Webhook WEBHOOK = null;
 
     private Bot() throws InterruptedException {
         try {
@@ -83,61 +87,26 @@ public class Bot {
         return instance;
     }
 
-    public void onStartUp() {
-        CHANNEL
-                .sendMessageEmbeds(
-                        new EmbedBuilder()
-                                .setAuthor(Config.Generic.name)
-                                .setDescription("Server has started!")
-                                .setFooter(Config.Generic.name)
-                                .setTimestamp(Instant.now())
-                                .setColor(39129)
-                                .build())
-                .queue();
+    public void shutdown() throws InterruptedException {
+
+        BOT.shutdown();
+
+        BOT.awaitShutdown();
     }
 
-    public void shutdown() {
-        CHANNEL
-                .sendMessageEmbeds(
-                        new EmbedBuilder()
-                                .setAuthor(Config.Generic.name)
-                                .setDescription("Server has shut down!")
-                                .setFooter(Config.Generic.name)
-                                .setTimestamp(Instant.now())
-                                .setColor(39129)
-                                .build())
-                .queue();
-
-        try {
-            BOT.shutdownNow();
-        } catch (Exception e) {
-            return;
-        }
-    }
-
-    public void sendEmbedMessage(
-            String message, @Nullable PlayerInfoFetcher.Profile profile, String ServerName) {
+    public void sendEmbedMessage(String message, String serverName) {
 
         if (CHANNEL == null) {
             Alfred.LOGGER.error("Chat channel not found. Please check your config file.");
             return;
         }
 
-        EmbedBuilder builder =
-                new EmbedBuilder()
+        EmbedBuilder builder = new EmbedBuilder()
                         .setDescription(message)
-                        .setFooter(ServerName)
+                        .setFooter(serverName, iconUrl)
                         .setTimestamp(Instant.now())
-                        .setColor(39129);
-
-        if (profile != null) {
-            builder.setAuthor(
-                    profile.data.player.username,
-                    String.format("https://namemc.com/profile/%s", profile.data.player.username),
-                    profile.data.player.avatar);
-        } else {
-            builder.setAuthor(ServerName);
-        }
+                                .setAuthor(serverName)
+                                .setColor(39129);
 
         CHANNEL.sendMessageEmbeds(builder.build()).queue();
     }
@@ -155,9 +124,93 @@ public class Bot {
                     .header("Content-Type", "application/json")
                     .method("POST", HttpRequest.BodyPublishers.ofString(body.toString()))
                     .build();
-            HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+
+            HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
         }  catch (IOException | InterruptedException e) {
             LOGGER.error(e.getMessage());
         }
+    }
+
+    public void sendServerStartingMessage(String serverName) {
+        CHANNEL
+                .sendMessageEmbeds(
+                        new EmbedBuilder()
+                                .setAuthor(serverName,null, iconUrl )
+                                .setDescription("Server is starting...")
+                                .setTimestamp(Instant.now())
+                                .setFooter(serverName, iconUrl)
+                                .setColor(Color.ORANGE)
+                                .build())
+                .queue();
+    }
+
+    public void sendServerStartedMessage(String serverName, Long uptime) {
+        String description = String.format("Server started in %sS 🕛", uptime);
+
+        CHANNEL
+                .sendMessageEmbeds(
+                        new EmbedBuilder()
+                                .setAuthor(serverName,null, iconUrl )
+                                .setDescription(description)
+                                .setTimestamp(Instant.now())
+                                .setFooter(serverName, iconUrl)
+                                .setColor(Color.GREEN)
+                                .build())
+                .queue();
+    }
+
+    public void sendServerStoppingMessage(String serverName) {
+        CHANNEL
+                .sendMessageEmbeds(
+                        new EmbedBuilder()
+                                .setAuthor(serverName,null, "https://cdn2.iconfinder.com/data/icons/whcompare-isometric-web-hosting-servers/50/value-server-512.png" )
+                                .setTitle("Server is stopping...")
+                                .setTimestamp(Instant.now())
+                                .setFooter(serverName, iconUrl)
+                                .setColor(Color.ORANGE)
+                                .build())
+                .queue();
+    }
+
+    public void sendServerStoppedMessage(String serverName) {
+        CHANNEL
+                .sendMessageEmbeds(
+                        new EmbedBuilder()
+                                .setAuthor(serverName,null, "https://cdn2.iconfinder.com/data/icons/whcompare-isometric-web-hosting-servers/50/value-server-512.png" )
+                                .setTitle("Server stopped!")
+                                .setTimestamp(Instant.now())
+                                .setFooter(serverName, iconUrl)
+                                .setColor(Color.RED)
+                                .build())
+                .queue();
+    }
+
+    public void sendJoinMessage(PlayerInfoFetcher.Profile profile, String serverName) {
+
+        String nameMCProfile = String.format("https://namemc.com/profile/%s", profile.data.player.username);
+
+        CHANNEL.sendMessageEmbeds(
+                new EmbedBuilder()
+                        .setAuthor(profile.data.player.username, nameMCProfile, profile.data.player.avatar )
+                        .setTitle("Joined the server")
+                        .setTimestamp(Instant.now())
+                        .setFooter(serverName, iconUrl)
+                        .setColor(Color.BLUE)
+                        .build()
+        ).queue();
+    }
+
+    public void sendLeaveMessage(PlayerInfoFetcher.Profile profile, String serverName) {
+        String nameMCProfile = String.format("https://namemc.com/profile/%s", profile.data.player.username);
+
+        CHANNEL.sendMessageEmbeds(
+                new EmbedBuilder()
+                        .setAuthor(profile.data.player.username, nameMCProfile, profile.data.player.avatar )
+                        .setTitle("Left the server")
+                        .setTimestamp(Instant.now())
+                        .setFooter(serverName, iconUrl)
+                        .setColor(Color.orange)
+                        .build()
+        ).queue();
     }
 }

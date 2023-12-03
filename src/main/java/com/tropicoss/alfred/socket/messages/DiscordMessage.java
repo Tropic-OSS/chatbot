@@ -2,24 +2,7 @@ package com.tropicoss.alfred.socket.messages;
 
 import net.minecraft.text.Text;
 
-public class DiscordMessage extends WebsocketMessage {
-
-    private final String message;
-
-    private final String member;
-
-    public DiscordMessage(String message, String member) {
-        this.message = message;
-        this.member = member;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public String getMember() {
-        return member;
-    }
+public record DiscordMessage(String message, String member) implements WebsocketMessage {
 
     @Override
     public String getMessageType() {
@@ -28,12 +11,12 @@ public class DiscordMessage extends WebsocketMessage {
 
     @Override
     public String toConsoleString() {
-        return String.format("[Discord] %s: %s", this.getMember(), this.getMessage());
+        return String.format("[Discord] %s: %s", this.member(), this.message());
     }
 
     @Override
     public Text toChatText() {
-        return Text.of(String.format("§9[Discord] §b%s: §f%s", this.getMember(),
-                this.getMessage()));
+        return Text.of(String.format("§9[Discord] §b%s: §f%s", this.member(),
+                this.message()));
     }
 }

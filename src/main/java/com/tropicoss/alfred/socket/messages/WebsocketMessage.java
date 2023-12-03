@@ -2,16 +2,16 @@ package com.tropicoss.alfred.socket.messages;
 
 import net.minecraft.text.Text;
 
-public abstract class WebsocketMessage {
-    public String getMessageType() {
+public interface WebsocketMessage {
+     default String getMessageType() {
         return null;
     }
 
-    public String toConsoleString() {
+     default String toConsoleString() {
         return null;
     }
 
-    public Text toChatText() {
+     default Text toChatText() {
         return null;
     }
 }
