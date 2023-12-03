@@ -1,12 +1,13 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "com.tropicoss.minecraft.alfred.minecraft.mixin",
+  "package": "com.tropicoss.alfred.minecraft.mixin",
   "compatibilityLevel": "JAVA_17",
-  "mixins": [
-    "PlayerManagerMixin"
-  ],
-  "client": [
+  "mixins": [],
+  "server": [
+    "EntityDeathMixin",
+    "PlayerDeathMixin",
+    "PlayerAdvancementTrackerMixin"
   ],
   "injectors": {
     "defaultRequire": 1
