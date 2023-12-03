@@ -8,18 +8,28 @@ import com.tropicoss.alfred.event.PlayerDeathEvents;
 import com.tropicoss.alfred.socket.messaging.EntityDeathMessage;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.Identifier;
+import net.minecraft.world.World;
 
 import static com.tropicoss.alfred.Alfred.*;
+import static java.lang.Math.floor;
+import static java.lang.Math.round;
 
 public final class EntityDeathCallback implements PlayerDeathEvents, EntityDeathEvents
 {
 
     @Override
     public void onPlayerDeath(ServerPlayerEntity player, DamageSource source) {
-        LOGGER.info("Hello");
         String message = source.getDeathMessage(player).getString();
-        String coordinates = player.getBlockPos().toString();
+
+        RegistryKey<World> registry = player.getWorld().getRegistryKey();
+
+        String dimension = registry.getValue().toString();
+
+        // Type Casting to Int to remove decimal points
+        String coordinates = String.format("*%s at %s, %s, %s*", dimension.replaceAll(".*:", ""), (int) player.getX(), (int) player.getY(), (int) player.getZ());
 
         EntityDeathMessage entityDeathMessage = new EntityDeathMessage(message, coordinates);
 
@@ -45,7 +55,11 @@ public final class EntityDeathCallback implements PlayerDeathEvents, EntityDeath
 
         String message = source.getDeathMessage(entity).getString();
 
-        String coordinates = entity.getBlockPos().toString();
+        RegistryKey<World> registry = entity.getWorld().getRegistryKey();
+
+        String dimension = registry.getValue().toString();
+
+        String coordinates = String.format("*%s at %s, %s, %s*", dimension.replaceAll(".*:", ""), (int) entity.getX(), (int) entity.getY(), (int) entity.getZ());
 
         EntityDeathMessage entityDeathMessage = new EntityDeathMessage(message, coordinates);
 
