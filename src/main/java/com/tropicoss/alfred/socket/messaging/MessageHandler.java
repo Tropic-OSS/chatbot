@@ -24,6 +24,9 @@ public class MessageHandler {
                     case "chat":
                         handleChatMessage(gson.fromJson(message, ChatMessage.class));
                         break;
+                    case "discord":
+                        handleDiscordMessage(gson.fromJson(message, DiscordMessage.class));
+                        break;
                     case "starting":
                         handleStartingMessage(gson.fromJson(message, StartingMessage.class));
                         break;
@@ -58,6 +61,15 @@ public class MessageHandler {
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
         }
+    }
+
+    private void handleDiscordMessage(DiscordMessage msg) {
+        LOGGER.info(msg.toConsoleString());
+
+        MINECRAFT_SERVER
+                .getPlayerManager()
+                .getPlayerList()
+                .forEach(player -> player.sendMessage(msg.toChatText(), false));
     }
 
     private void handleChatMessage(ChatMessage msg) {
