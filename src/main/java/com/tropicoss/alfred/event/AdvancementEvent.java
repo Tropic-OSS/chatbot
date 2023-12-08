@@ -3,6 +3,7 @@ package com.tropicoss.alfred.event;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.advancement.Advancement;
+import net.minecraft.advancement.AdvancementEntry;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 @FunctionalInterface
@@ -15,5 +16,5 @@ public interface AdvancementEvent {
                 }
             });
 
-    void onGrantCriterion(ServerPlayerEntity player, Advancement advancement, String criterion);
+    void onGrantCriterion(ServerPlayerEntity player, AdvancementEntry advancement, String criterion);
 }

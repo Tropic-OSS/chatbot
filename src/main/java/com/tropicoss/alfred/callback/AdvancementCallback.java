@@ -7,19 +7,22 @@ import com.tropicoss.alfred.event.AdvancementEvent;
 import com.tropicoss.alfred.socket.messaging.AdvancementMessage;
 import net.minecraft.advancement.Advancement;
 import net.minecraft.advancement.AdvancementDisplay;
+import net.minecraft.advancement.AdvancementEntry;
 import net.minecraft.server.network.ServerPlayerEntity;
+
+import java.util.Optional;
 
 import static com.tropicoss.alfred.Alfred.SOCKET_CLIENT;
 import static com.tropicoss.alfred.Alfred.SOCKET_SERVER;
 
 public class AdvancementCallback implements AdvancementEvent {
     @Override
-    public void onGrantCriterion(ServerPlayerEntity player, Advancement advancement, String criterion) {
-        AdvancementDisplay advancementDisplay = advancement.getDisplay();
+    public void onGrantCriterion(ServerPlayerEntity player, AdvancementEntry advancement, String criterion) {
+        Optional<AdvancementDisplay> advancementDisplay = advancement.value().display();
 
-        if(advancementDisplay == null || !advancementDisplay.shouldAnnounceToChat()) return;
+        if(advancementDisplay.isEmpty() || !advancementDisplay.get().shouldAnnounceToChat()) return;
 
-        AdvancementMessage advancementMessage = new AdvancementMessage(advancementDisplay.getTitle().getString(), advancementDisplay.getDescription().getString(), player.getUuidAsString());
+        AdvancementMessage advancementMessage = new AdvancementMessage(advancementDisplay.get().getTitle().getString(), advancementDisplay.get().getDescription().getString(), player.getUuidAsString());
 
         String json = new Gson().toJson(advancementMessage);
 
