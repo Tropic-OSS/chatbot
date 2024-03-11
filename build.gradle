@@ -22,6 +22,7 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
     // Java-WebSocket (Websocket API)
+    // TODO : DEPRICATE
     include( implementation 'org.java-websocket:Java-WebSocket:1.5.2')
 
     // JDA (Discord API)
@@ -39,6 +40,9 @@ dependencies {
     include( implementation "com.fasterxml.jackson.core:jackson-core:2.14.1")
     include( implementation "com.fasterxml.jackson.core:jackson-databind:2.14.1")
     include( implementation "com.fasterxml.jackson.core:jackson-annotations:2.14.1")
+
+    // Spark (Webserver)
+    include( implementation "com.sparkjava:spark-core:${project.jda_version}")
 }
 
 processResources {
