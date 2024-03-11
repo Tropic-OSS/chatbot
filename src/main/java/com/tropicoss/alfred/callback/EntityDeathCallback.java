@@ -17,7 +17,7 @@ import static com.tropicoss.alfred.Alfred.*;
 import static java.lang.Math.floor;
 import static java.lang.Math.round;
 
-public final class EntityDeathCallback implements PlayerDeathEvents, EntityDeathEvents
+public class EntityDeathCallback implements PlayerDeathEvents, EntityDeathEvents
 {
 
     @Override
