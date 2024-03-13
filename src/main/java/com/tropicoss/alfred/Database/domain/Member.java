@@ -7,7 +7,6 @@ import com.j256.ormlite.table.DatabaseTable;
 @DatabaseTable(tableName = "member")
 public class Member {
 
-
     @DatabaseField
     private String minecraftUUID;
 
@@ -15,13 +14,12 @@ public class Member {
     private String discordUUID;
 
 
-
-
-
     @DatabaseField
     private java.util.Date createdAt;
     @DatabaseField
     private java.util.Date lastUpdatedAt;
+
+
 
 
 

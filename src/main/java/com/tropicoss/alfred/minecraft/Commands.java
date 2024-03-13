@@ -27,5 +27,32 @@ public class Commands {
                                                                     Alfred.SOCKET_CLIENT.reload();
                                                                     return 1;
                                                                 }))));
+        LinktoDiscord();
     }
+
+
+    public static void LinktoDiscord(){
+        CommandRegistrationCallback.EVENT.register(
+                (dispatcher, registryAccess, environment) ->
+                        dispatcher.register(
+                                literal("alfred")
+                                        .executes(
+                                                context -> {
+                                                    context.getSource().sendFeedback(() -> Text.literal("To reload Alfred do /alfred reload"), false);
+                                                    return 1;
+                                                })
+                                        .then(
+                                                literal("link")
+                                                        .executes(
+                                                                context -> {
+                                                                    context
+                                                                            .getSource()
+                                                                            .sendFeedback(() -> Text.literal("Reloading"), false);
+
+                                                                    return 1;
+                                                                }))));
+
+
+    }
+
 }
